@@ -14,21 +14,21 @@ export default async function ActiveHacksPage() {
     <div className="min-h-screen bg-white text-zinc-900 flex flex-col font-sans">
       
       {/* 1. PUBLIC HEADER */}
-      <header className="sticky top-0 z-50 w-full bg-[#E61E32] border-b border-zinc-200 px-6 py-2.5 flex items-center justify-between gap-4 shrink-0 shadow-sm">
-        <div className="flex items-center gap-2">
-          <Link href="/" className="font-semibold text-lg tracking-tight text-white hover:text-red-100 transition-colors">
+      <header className="sticky top-0 z-50 w-full bg-[#E61E32] border-b border-[#c91527] px-4 sm:px-6 py-2.5 flex items-center justify-between gap-4 shrink-0 shadow-sm">
+        <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
+          <Link href="/" className="font-semibold text-base sm:text-lg tracking-tight text-white hover:text-red-100 transition-colors shrink-0">
             HackOS
           </Link>
-          <span className="text-red-200 text-sm font-normal">/</span>
-          <span className="text-red-100 text-sm font-medium">Active Hacks Hub</span>
+          <span className="text-red-200 text-xs sm:text-sm font-normal shrink-0">/</span>
+          <span className="text-white text-xs sm:text-sm font-semibold truncate max-w-[150px] sm:max-w-xs">Active Hacks Hub</span>
         </div>
 
-        <div>
+        <div className="shrink-0">
           <Link
             href="/sign-in"
-            className="text-zinc-700 hover:text-zinc-900 border border-zinc-300 hover:border-zinc-400 bg-white font-bold py-1.5 px-4 rounded text-xs transition-colors shadow-sm cursor-pointer"
+            className="text-zinc-700 hover:text-zinc-900 border border-zinc-300 hover:border-zinc-400 bg-white font-bold py-1.5 px-3 sm:px-4 rounded text-[10px] sm:text-xs transition-colors shadow-sm cursor-pointer whitespace-nowrap"
           >
-            Want to Host a Hack?
+            <span className="hidden sm:inline">Want to </span>Host a Hack?
           </Link>
         </div>
       </header>

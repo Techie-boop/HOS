@@ -1,26 +1,7 @@
 import Link from "next/link";
-import { prisma } from "../lib/db";
+import { Ticket, Calendar, Trophy } from "lucide-react";
 
 export default async function Home() {
-  // Fetch judging guidelines across all hackathons
-  const guidelines = await prisma.judgingGuideline.findMany({
-    include: {
-      hackathon: {
-        select: { title: true },
-      },
-    },
-    orderBy: { createdAt: "desc" },
-  });
-
-  // Group guidelines by hackathon title
-  const groupedGuidelines: Record<string, string[]> = {};
-  guidelines.forEach((g) => {
-    const title = g.hackathon.title;
-    if (!groupedGuidelines[title]) {
-      groupedGuidelines[title] = [];
-    }
-    groupedGuidelines[title].push(g.content);
-  });
 
   return (
     <div className="min-h-screen bg-zinc-50 text-zinc-900 flex flex-col font-sans justify-between">
@@ -84,8 +65,8 @@ export default async function Home() {
         {/* Sleek Features Grid Preview */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 pt-12 w-full text-left">
           <div className="bg-white border border-zinc-300 rounded-none p-5 shadow-sm space-y-2">
-            <div className="w-8 h-8 rounded-none bg-red-50 text-[#E61E32] flex items-center justify-center font-bold">
-              🎟️
+            <div className="w-8 h-8 rounded-none bg-red-50 text-[#E61E32] flex items-center justify-center">
+              <Ticket className="w-4 h-4" />
             </div>
             <h3 className="text-xs font-bold text-zinc-800 uppercase tracking-wider">Ticketing Integration</h3>
             <p className="text-[11px] text-zinc-500 font-normal leading-relaxed">
@@ -94,8 +75,8 @@ export default async function Home() {
           </div>
 
           <div className="bg-white border border-zinc-300 rounded-none p-5 shadow-sm space-y-2">
-            <div className="w-8 h-8 rounded-none bg-red-50 text-[#E61E32] flex items-center justify-center font-bold">
-              📅
+            <div className="w-8 h-8 rounded-none bg-red-50 text-[#E61E32] flex items-center justify-center">
+              <Calendar className="w-4 h-4" />
             </div>
             <h3 className="text-xs font-bold text-zinc-800 uppercase tracking-wider">Event Scheduling</h3>
             <p className="text-[11px] text-zinc-500 font-normal leading-relaxed">
@@ -104,8 +85,8 @@ export default async function Home() {
           </div>
 
           <div className="bg-white border border-zinc-300 rounded-none p-5 shadow-sm space-y-2">
-            <div className="w-8 h-8 rounded-none bg-red-50 text-[#E61E32] flex items-center justify-center font-bold">
-              💰
+            <div className="w-8 h-8 rounded-none bg-red-50 text-[#E61E32] flex items-center justify-center">
+              <Trophy className="w-4 h-4" />
             </div>
             <h3 className="text-xs font-bold text-zinc-800 uppercase tracking-wider">Prizes Breakdown</h3>
             <p className="text-[11px] text-zinc-500 font-normal leading-relaxed">
@@ -114,41 +95,12 @@ export default async function Home() {
           </div>
         </div>
       </main>
-
-      {/* 2.5 JUDGING GUIDELINES SECTION */}
-      <section className="bg-white border-t border-b border-zinc-200 py-16 w-full shrink-0">
-        <div className="max-w-4xl mx-auto px-6 space-y-8">
-          <div className="text-center space-y-2">
-            <h2 className="text-xl md:text-2xl font-bold tracking-tight text-zinc-900">Judging Guidelines & Rubrics</h2>
-            <p className="text-zinc-500 text-xs md:text-sm max-w-xl mx-auto leading-relaxed">
-              Explore the core evaluation criteria, scoring rubrics, and guidelines configured by event organizers.
-            </p>
-          </div>
-
-          {Object.keys(groupedGuidelines).length === 0 ? (
-            <div className="bg-zinc-50 border border-zinc-200 rounded-none p-10 text-center text-zinc-400">
-              <p className="text-xs font-semibold">No judging guidelines configured yet.</p>
-              <p className="text-[10px] text-zinc-400 mt-1">Organizers will define evaluation rubrics when adding panel configuration.</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
-              {Object.entries(groupedGuidelines).map(([hackTitle, contents]) => (
-                <div key={hackTitle} className="bg-white border border-zinc-300 p-5 rounded-none space-y-3 shadow-sm hover:border-zinc-400 transition-colors">
-                  <h3 className="text-xs font-extrabold uppercase text-[#E61E32] tracking-wider border-b border-zinc-150 pb-2">
-                    {hackTitle}
-                  </h3>
-                  <ul className="space-y-2.5">
-                    {contents.map((content, idx) => (
-                      <li key={idx} className="flex items-start gap-2 text-xs text-zinc-600 font-normal leading-relaxed">
-                        <span className="text-[#E61E32] font-bold text-xs shrink-0">✓</span>
-                        <span>{content}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ))}
-            </div>
-          )}
+      {/* MVP Status Section */}
+      <section className="bg-white border-t border-b border-zinc-200 py-10 w-full shrink-0">
+        <div className="max-w-4xl mx-auto px-6 text-center">
+          <p className="text-zinc-500 text-xs md:text-sm font-medium leading-relaxed">
+            It is an MVP hence we set this Product to the Pilot testing.
+          </p>
         </div>
       </section>
 

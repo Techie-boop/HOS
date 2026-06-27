@@ -22,15 +22,15 @@ export default function ProfileDropdown({ user }: ProfileDropdownProps) {
       {/* Capsule button with grey solid look */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-3 bg-zinc-100 hover:bg-zinc-200 text-zinc-800 border border-zinc-200 rounded-full pl-2 pr-5 py-2 text-sm font-semibold shadow-sm focus:outline-none transition-colors duration-150 cursor-pointer"
+        className="flex items-center gap-2 bg-zinc-100 hover:bg-zinc-200 text-zinc-800 border border-zinc-200 rounded-full pl-1.5 pr-4 py-1 text-xs font-semibold shadow-sm focus:outline-none transition-colors duration-150 cursor-pointer"
       >
         {/* White avatar circle */}
-        <div className="w-7 h-7 rounded-full bg-white text-zinc-800 border border-zinc-200 flex items-center justify-center font-black select-none">
+        <div className="w-6 h-6 rounded-full bg-white text-zinc-800 border border-zinc-200 flex items-center justify-center font-bold text-[10px] select-none">
           {user.fullName.charAt(0).toUpperCase()}
         </div>
         <span className="max-w-[120px] truncate select-none">{user.fullName}</span>
         <svg
-          className={`w-4 h-4 transition-transform duration-200 shrink-0 select-none ${isOpen ? "rotate-180" : ""}`}
+          className={`w-3.5 h-3.5 transition-transform duration-200 shrink-0 select-none ${isOpen ? "rotate-180" : ""}`}
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"

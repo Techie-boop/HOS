@@ -253,3 +253,40 @@ export async function updateHackathonAction(prevState: any, formData: FormData) 
   revalidatePath(`/organizer/dashboard/hackathons/${hackathonId}/edit`);
   return { success: true };
 }
+
+export async function updateHackathonDatesAction(
+  hackathonId: string,
+  startDateISO: string,
+  endDateISO: string
+) {
+  const organizerId = await getSessionUserId();
+  if (!organizerId) {
+    return { success: false, error: "Unauthorized." };
+  }
+
+  try {
+    const existing = await prisma.hackathon.findUnique({
+      where: { id: hackathonId },
+    });
+
+    if (!existing || existing.organizerId !== organizerId) {
+      return { success: false, error: "Hackathon not found or unauthorized." };
+    }
+
+    await prisma.hackathon.update({
+      where: { id: hackathonId },
+      data: {
+        startDate: new Date(startDateISO),
+        endDate: new Date(endDateISO),
+      },
+    });
+
+    revalidatePath("/organizer/dashboard");
+    revalidatePath(`/timer/${hackathonId}`);
+    return { success: true };
+  } catch (err: any) {
+    console.error("updateHackathonDatesAction error:", err);
+    return { success: false, error: "Failed to update hackathon timer." };
+  }
+}
+

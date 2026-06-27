@@ -10,7 +10,6 @@ export default async function OrganizerJudgingPage() {
     redirect("/sign-in");
   }
 
-  // Fetch organizer's hackathons
   const hackathons = await prisma.hackathon.findMany({
     where: { organizerId: user.id },
     select: { id: true, title: true },
@@ -54,10 +53,10 @@ export default async function OrganizerJudgingPage() {
         <p className="text-sm text-zinc-500">Add experts to evaluation panels, upload profiles, and define rubrics/guidelines</p>
       </div>
 
-      <JudgingManager 
-        hackathons={hackathons} 
-        initialJudges={judges} 
-        initialGuidelines={guidelines} 
+      <JudgingManager
+        hackathons={hackathons}
+        initialJudges={judges}
+        initialGuidelines={guidelines}
       />
     </main>
   );

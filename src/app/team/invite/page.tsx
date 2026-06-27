@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import InviteCopyButton from "./InviteCopyButton";
 import { headers } from "next/headers";
+import { Mail } from "lucide-react";
 
 export default async function TeamInvitePage() {
   const team = await getSessionTeam();
@@ -44,8 +45,8 @@ export default async function TeamInvitePage() {
       <main className="flex-grow flex items-center justify-center p-6 md:p-12 w-full max-w-lg mx-auto">
         <div className="bg-white border border-zinc-200 shadow-sm p-8 rounded-lg space-y-6 w-full text-center">
           
-          <div className="w-12 h-12 bg-red-50 text-[#E61E32] rounded-full flex items-center justify-center text-xl font-bold mx-auto shadow-inner border border-red-100">
-            ✉️
+          <div className="w-12 h-12 bg-red-50 text-[#E61E32] rounded-full flex items-center justify-center mx-auto shadow-inner border border-red-100">
+            <Mail className="w-5 h-5 text-[#E61E32]" strokeWidth={2.5} />
           </div>
 
           <div className="space-y-1">

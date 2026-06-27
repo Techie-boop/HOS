@@ -103,14 +103,14 @@ export default function JuryConsole({
   return (
     <div className="flex flex-col flex-1">
       {/* SubNavbar */}
-      <nav className="w-full bg-white border-b border-zinc-200 px-6 flex items-center gap-6 text-sm font-semibold tracking-tight shadow-sm shrink-0">
+      <nav className="w-full bg-white border-b border-zinc-200 px-6 flex items-center gap-6 text-sm font-semibold tracking-tight shadow-sm shrink-0 overflow-x-auto whitespace-nowrap scrollbar-none">
         {tabs.map((tab) => {
           const isActive = activeTab === tab.id;
           return (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`py-3 px-1 border-b-2 transition-colors cursor-pointer flex items-center gap-1.5 focus:outline-none ${
+              className={`py-3 px-1 border-b-2 transition-colors cursor-pointer flex items-center gap-1.5 focus:outline-none shrink-0 ${
                 isActive
                   ? "border-[#E61E32] text-zinc-900"
                   : "border-transparent text-zinc-500 hover:text-zinc-950"

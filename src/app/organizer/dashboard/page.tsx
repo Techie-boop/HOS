@@ -2,7 +2,8 @@ import { getSessionUser } from "../../../lib/auth";
 import { prisma } from "../../../lib/db";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { Plus, Calendar, Users } from "lucide-react";
+import { Plus } from "lucide-react";
+import DashboardTimerConfig from "./DashboardTimerConfig";
 
 export default async function OrganizerDashboardPage() {
   const user = await getSessionUser();
@@ -46,11 +47,11 @@ export default async function OrganizerDashboardPage() {
         </Link>
       </section>
 
-      {/* Main Dashboard Widget: Events (Full Width) */}
+      {/* Main Dashboard Widget: Active Timer Config & Status */}
       <section className="space-y-3">
         <div className="flex items-center gap-2 border-b border-zinc-200 pb-2">
           <h3 className="text-xs font-extrabold uppercase tracking-widest text-zinc-500">
-            Hackathon Events Overview
+            Hackathon Timer & Live Operations
           </h3>
         </div>
         
@@ -70,73 +71,7 @@ export default async function OrganizerDashboardPage() {
             </Link>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {hackathons.map((hackathon) => {
-              const startDate = new Date(hackathon.startDate).toLocaleDateString("en-IN", {
-                month: "short",
-                day: "numeric",
-              });
-              const endDate = new Date(hackathon.endDate).toLocaleDateString("en-IN", {
-                month: "short",
-                day: "numeric",
-              });
-              
-              return (
-                <div key={hackathon.id} className="bg-white border border-zinc-300 rounded-none overflow-hidden hover:border-zinc-450 shadow-sm transition-all flex flex-col justify-between">
-                  
-                  {/* Banner image with overlay removed */}
-                  <div className="w-full relative bg-zinc-950 border-b border-zinc-200">
-                    <img
-                      src={hackathon.bannerUrl || "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?q=80&w=1000"}
-                      alt={hackathon.title}
-                      className="w-full h-32 md:h-36 object-cover"
-                    />
-                  </div>
-
-                  <div className="p-4 flex-1 flex flex-col justify-between space-y-3">
-                    <div className="space-y-2">
-                      
-                      {/* Tag placed under the image card */}
-                      <div>
-                        <span className="text-[9px] font-extrabold uppercase px-2 py-0.5 bg-red-50 text-[#E61E32] border border-red-200 rounded-none tracking-wider inline-block">
-                          {hackathon.tag}
-                        </span>
-                      </div>
-
-                      <div className="flex items-center justify-between gap-2">
-                        <h4 className="text-sm font-bold text-zinc-950 truncate max-w-[70%]">
-                          {hackathon.title}
-                        </h4>
-                        <span className={`text-[9px] font-extrabold uppercase px-2 py-0.5 rounded-none border ${
-                          hackathon.status === "Active"
-                            ? "bg-green-50 text-green-700 border-green-200"
-                            : hackathon.status === "Draft"
-                            ? "bg-amber-50 text-amber-700 border-amber-200"
-                            : "bg-zinc-50 text-zinc-600 border-zinc-200"
-                        }`}>
-                          {hackathon.status}
-                        </span>
-                      </div>
-                      <p className="text-zinc-500 text-xs line-clamp-2 leading-relaxed font-normal">
-                        {hackathon.description}
-                      </p>
-                    </div>
-
-                    <div className="flex items-center justify-between border-t border-zinc-200 pt-3 text-[10px] text-zinc-450 font-semibold uppercase tracking-wider">
-                      <span className="flex items-center gap-1.5">
-                        <Calendar className="w-3.5 h-3.5 text-zinc-400 shrink-0" strokeWidth={2.5} />
-                        {startDate} - {endDate}
-                      </span>
-                      <span className="text-zinc-805 font-extrabold flex items-center gap-1">
-                        <Users className="w-3.5 h-3.5 text-zinc-500 shrink-0" strokeWidth={2.5} />
-                        {hackathon.teams.length} Registered Teams
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+          <DashboardTimerConfig hackathons={hackathons} />
         )}
       </section>
 
