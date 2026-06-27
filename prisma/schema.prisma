@@ -1,0 +1,222 @@
+// prisma/schema.prisma
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider  = "postgresql"
+}
+
+model Organizer {
+  id               String      @id @default(uuid())
+  fullName         String
+  email            String      @unique
+  designation      String
+  phone            String?
+  organizationName String
+  website          String?
+  passwordHash     String
+  hackathons       Hackathon[]
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+}
+
+model Hackathon {
+  id            String         @id @default(uuid())
+  title         String
+  description   String
+  startDate     DateTime
+  endDate       DateTime
+  status        String         @default("Draft") // "Draft", "Active", "Completed"
+  tag           String         @default("Regional") // "International", "Specialized", "Regional"
+  location      String         @default("Online")
+  prizePool     String         @default("$0")
+  bannerUrl     String?
+  ticketingLink String?
+  locationLink  String?
+  prizes        Prize[]
+  faqs          FAQ[]
+  scheduleItems ScheduleItem[]
+  ticketTiers   TicketTier[]
+  qrCodeUrl     String?
+  organizerId   String
+  organizer     Organizer      @relation(fields: [organizerId], references: [id], onDelete: Cascade)
+  registrations      Registration[]
+  teams              Team[]
+  announcements      Announcement[]
+  judges             Judge[]
+  judgingGuidelines  JudgingGuideline[]
+  projectSubmissions ProjectSubmission[]
+  publishLeaderboard Boolean        @default(false)
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+}
+
+model Prize {
+  id          String    @id @default(uuid())
+  title       String
+  value       String
+  description String?
+  hackathonId String
+  hackathon   Hackathon @relation(fields: [hackathonId], references: [id], onDelete: Cascade)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Participant {
+  id            String         @id @default(uuid())
+  fullName      String
+  email         String         @unique
+  phone         String?
+  registrations Registration[]
+  createdAt     DateTime       @default(now())
+}
+
+model Registration {
+  id             String      @id @default(uuid())
+  hackathonId    String
+  hackathon      Hackathon   @relation(fields: [hackathonId], references: [id], onDelete: Cascade)
+  participantId  String
+  participant    Participant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  registeredAt   DateTime    @default(now())
+  ticketTierName String?
+  ticketPriceINR Int?
+  transactionId  String?
+  paymentMode    String?
+  paymentStatus  String      @default("Pending")
+
+  @@unique([hackathonId, participantId])
+}
+
+model FAQ {
+  id          String    @id @default(uuid())
+  question    String
+  answer      String
+  hackathonId String
+  hackathon   Hackathon @relation(fields: [hackathonId], references: [id], onDelete: Cascade)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model ScheduleItem {
+  id          String    @id @default(uuid())
+  time        String
+  eventName   String
+  hackathonId String
+  hackathon   Hackathon @relation(fields: [hackathonId], references: [id], onDelete: Cascade)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model TicketTier {
+  id          String    @id @default(uuid())
+  name        String
+  priceINR    Int
+  hackathonId String
+  hackathon   Hackathon @relation(fields: [hackathonId], references: [id], onDelete: Cascade)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Team {
+  id                String       @id @default(uuid())
+  teamName          String
+  teamLeadName      String
+  email             String       @unique
+  passwordHash      String
+  joinCode          String       @unique
+  score             Int          @default(0)
+  avatarUrl         String?
+  hackathonId       String
+  hackathon         Hackathon    @relation(fields: [hackathonId], references: [id], onDelete: Cascade)
+  members           TeamMember[]
+  tasks             Task[]
+  taskLogs          TaskLog[]
+  projectSubmission ProjectSubmission?
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+}
+
+model TeamMember {
+  id           String   @id @default(uuid())
+  fullName     String
+  email        String   @unique
+  passwordHash String
+  avatarUrl    String?
+  teamId       String
+  team         Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Task {
+  id              String    @id @default(uuid())
+  title           String
+  description     String
+  status          String    @default("TO_DO") // TO_DO | IN_PROGRESS | COMPLETED
+  assigneeId      String
+  assigneeName    String
+  assigneeRole    String
+  completedById   String?
+  completedByName String?
+  completedByRole String?
+  completedAt     String?
+  teamId          String
+  team            Team      @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+model TaskLog {
+  id        String   @id @default(uuid())
+  message   String
+  teamId    String
+  team      Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+}
+
+model Announcement {
+  id          String    @id @default(uuid())
+  title       String
+  content     String
+  hackathonId String
+  hackathon   Hackathon @relation(fields: [hackathonId], references: [id], onDelete: Cascade)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Judge {
+  id                 String    @id @default(uuid())
+  name               String
+  description        String
+  imageUrl           String?
+  loginCode          String?
+  loginCodeExpiresAt DateTime?
+  hackathonId        String
+  hackathon          Hackathon @relation(fields: [hackathonId], references: [id], onDelete: Cascade)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+}
+
+model JudgingGuideline {
+  id          String    @id @default(uuid())
+  content     String
+  hackathonId String
+  hackathon   Hackathon @relation(fields: [hackathonId], references: [id], onDelete: Cascade)
+  createdAt   DateTime  @default(now())
+}
+
+model ProjectSubmission {
+  id            String    @id @default(uuid())
+  teamId        String    @unique
+  team          Team      @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  hackathonId   String
+  hackathon     Hackathon @relation(fields: [hackathonId], references: [id], onDelete: Cascade)
+  githubUrl     String
+  liveUrl       String?
+  projectName   String?
+  description   String?
+  submittedAt   DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}

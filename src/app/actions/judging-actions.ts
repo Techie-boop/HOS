@@ -1,0 +1,204 @@
+"use server";
+
+import { prisma } from "../../lib/db";
+import { getSessionUser } from "../../lib/auth";
+import { revalidatePath } from "next/cache";
+
+export async function addJudge(
+  hackathonId: string,
+  name: string,
+  description: string,
+  imageUrl: string
+) {
+  try {
+    const user = await getSessionUser();
+    if (!user) throw new Error("Unauthorized");
+
+    // Verify organizer owns this hackathon
+    const hackathon = await prisma.hackathon.findFirst({
+      where: {
+        id: hackathonId,
+        organizerId: user.id,
+      },
+    });
+
+    if (!hackathon) throw new Error("Hackathon not found or access denied");
+
+    const judge = await prisma.judge.create({
+      data: {
+        hackathonId,
+        name,
+        description,
+        imageUrl: imageUrl || null,
+      },
+    });
+
+    revalidatePath("/organizer/dashboard/judging");
+    revalidatePath("/team/dashboard/judges");
+
+    return { success: true, judge };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}
+
+export async function deleteJudge(judgeId: string) {
+  try {
+    const user = await getSessionUser();
+    if (!user) throw new Error("Unauthorized");
+
+    // Verify organizer owns the related hackathon
+    const judge = await prisma.judge.findUnique({
+      where: { id: judgeId },
+      include: { hackathon: true },
+    });
+
+    if (!judge || judge.hackathon.organizerId !== user.id) {
+      throw new Error("Access denied");
+    }
+
+    await prisma.judge.delete({
+      where: { id: judgeId },
+    });
+
+    revalidatePath("/organizer/dashboard/judging");
+    revalidatePath("/team/dashboard/judges");
+
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}
+
+export async function addJudgingGuideline(hackathonId: string, content: string) {
+  try {
+    const user = await getSessionUser();
+    if (!user) throw new Error("Unauthorized");
+
+    // Verify organizer owns this hackathon
+    const hackathon = await prisma.hackathon.findFirst({
+      where: {
+        id: hackathonId,
+        organizerId: user.id,
+      },
+    });
+
+    if (!hackathon) throw new Error("Hackathon not found or access denied");
+
+    const guideline = await prisma.judgingGuideline.create({
+      data: {
+        hackathonId,
+        content,
+      },
+    });
+
+    revalidatePath("/organizer/dashboard/judging");
+    revalidatePath("/team/dashboard/judges");
+
+    return { success: true, guideline };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}
+
+export async function deleteJudgingGuideline(guidelineId: string) {
+  try {
+    const user = await getSessionUser();
+    if (!user) throw new Error("Unauthorized");
+
+    // Verify organizer owns the related hackathon
+    const guideline = await prisma.judgingGuideline.findUnique({
+      where: { id: guidelineId },
+      include: { hackathon: true },
+    });
+
+    if (!guideline || guideline.hackathon.organizerId !== user.id) {
+      throw new Error("Access denied");
+    }
+
+    await prisma.judgingGuideline.delete({
+      where: { id: guidelineId },
+    });
+
+    revalidatePath("/organizer/dashboard/judging");
+    revalidatePath("/team/dashboard/judges");
+
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}
+
+export async function generateJudgeAccessCode(judgeId: string) {
+  try {
+    const user = await getSessionUser();
+    if (!user) throw new Error("Unauthorized");
+
+    // Verify organizer owns the related hackathon
+    const judge = await prisma.judge.findUnique({
+      where: { id: judgeId },
+      include: { hackathon: true },
+    });
+
+    if (!judge || judge.hackathon.organizerId !== user.id) {
+      throw new Error("Access denied");
+    }
+
+    // Generate unique 6-digit access code
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes expiration
+
+    await prisma.judge.update({
+      where: { id: judgeId },
+      data: {
+        loginCode: code,
+        loginCodeExpiresAt: expiresAt,
+      },
+    });
+
+    revalidatePath("/organizer/dashboard/judging");
+    return { success: true, code, expiresAt };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}
+
+import { setJudgeSessionCookie, clearJudgeSessionCookie } from "../../lib/auth";
+
+export async function loginJudgeAction(code: string) {
+  try {
+    if (!code || code.trim().length !== 6) {
+      throw new Error("Access code must be exactly 6 digits.");
+    }
+
+    const judge = await prisma.judge.findFirst({
+      where: {
+        loginCode: code.trim(),
+        loginCodeExpiresAt: {
+          gte: new Date(),
+        },
+      },
+    });
+
+    if (!judge) {
+      throw new Error("Access code is invalid or has expired (validity is 5 minutes).");
+    }
+
+    // Set cookie session for judge
+    await setJudgeSessionCookie(judge.id);
+
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}
+
+export async function logoutJudgeAction() {
+  try {
+    await clearJudgeSessionCookie();
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}
+

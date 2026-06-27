@@ -1,0 +1,298 @@
+import { prisma } from "../../../lib/db";
+import { notFound } from "next/navigation";
+import Link from "next/link";
+import FAQAccordion from "./FAQAccordion"; // We'll write this simple client helper in a separate file or inline
+
+interface PublicDetailProps {
+  params: Promise<{
+    id: string;
+  }>;
+}
+
+export default async function PublicHackathonDetailPage({ params }: PublicDetailProps) {
+  const { id } = await params;
+
+  // Query hackathon details including prizes, faqs, schedule items, and registrations
+  const hackathon = await prisma.hackathon.findUnique({
+    where: { id },
+    include: {
+      prizes: true,
+      faqs: true,
+      scheduleItems: true,
+      registrations: true,
+      ticketTiers: true,
+    },
+  });
+
+  if (!hackathon) {
+    notFound();
+  }
+
+  const startDate = new Date(hackathon.startDate).toLocaleDateString("en-US", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  });
+  const endDate = new Date(hackathon.endDate).toLocaleDateString("en-US", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  });
+
+  return (
+    <div className="min-h-screen bg-zinc-50 text-zinc-900 flex flex-col font-sans">
+      {/* 1. PUBLIC HEADER */}
+      <header className="sticky top-0 z-50 w-full bg-[#E61E32] border-b border-zinc-200 px-6 py-2.5 flex items-center justify-between gap-4 shrink-0 shadow-sm">
+        <div className="flex items-center gap-2">
+          <Link href="/" className="font-semibold text-lg tracking-tight text-white hover:text-red-100 transition-colors">
+            HackOS
+          </Link>
+          <span className="text-red-200 text-sm font-normal">/</span>
+          <Link href="/active-hacks" className="text-red-100 hover:text-white text-sm font-medium transition-colors">
+            Active Hacks Hub
+          </Link>
+          <span className="text-red-200 text-sm font-normal">/</span>
+          <span className="text-white text-sm font-semibold truncate max-w-[150px] sm:max-w-xs">{hackathon.title}</span>
+        </div>
+
+        <div>
+          <Link
+            href="/sign-in"
+            className="text-zinc-700 hover:text-zinc-900 border border-zinc-300 hover:border-zinc-400 bg-white font-bold py-1.5 px-4 rounded text-xs transition-colors shadow-sm cursor-pointer"
+          >
+            Want to Host a Hack?
+          </Link>
+        </div>
+      </header>
+
+      {/* 2. SPECIALIZED DETAIL WORKSPACE */}
+      <main className="p-6 md:p-8 max-w-6xl w-full mx-auto flex-1 grid grid-cols-1 lg:grid-cols-12 gap-8 animate-in fade-in duration-200">
+        
+        {/* Main Content Column (8 cols on lg) */}
+        <div className="lg:col-span-8 space-y-8">
+          
+          {/* Banner & Title Area */}
+          <div className="bg-white border border-zinc-200 rounded-lg overflow-hidden shadow-sm">
+            <div className="w-full aspect-[16/9] md:aspect-[21/9] bg-zinc-900 flex items-center justify-center overflow-hidden">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={
+                  hackathon.bannerUrl ||
+                  "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?q=80&w=1000"
+                }
+                alt={hackathon.title}
+                className="w-full h-full object-contain"
+              />
+            </div>
+            <div className="p-6 md:p-8 space-y-4">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-[10px] font-bold uppercase px-2.5 py-1 bg-zinc-100 text-zinc-800 rounded border border-zinc-200">
+                  {hackathon.tag}
+                </span>
+                <span
+                  className={`text-[10px] font-bold uppercase px-2.5 py-1 rounded border ${
+                    hackathon.status === "Active"
+                      ? "bg-green-50 text-green-700 border-green-200"
+                      : hackathon.status === "Draft"
+                      ? "bg-amber-50 text-amber-700 border-amber-200"
+                      : "bg-zinc-100 text-zinc-700 border-zinc-200"
+                  }`}
+                >
+                  {hackathon.status}
+                </span>
+              </div>
+
+              <h1 className="text-3xl font-medium tracking-tight text-zinc-900 leading-tight">
+                {hackathon.title}
+              </h1>
+
+              <div className="border-t border-zinc-100 pt-4">
+                <h3 className="text-xs uppercase tracking-wider text-zinc-400 font-bold mb-2">About Event</h3>
+                <p className="text-zinc-650 text-sm font-normal leading-relaxed whitespace-pre-line">
+                  {hackathon.description}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Timeline & Schedule Section */}
+          <div className="bg-white border border-zinc-200 rounded-lg p-6 md:p-8 shadow-sm space-y-6">
+            <div className="border-b border-zinc-150 pb-3">
+              <h2 className="text-lg font-medium text-zinc-900">Event Timeline & Schedule</h2>
+              <p className="text-zinc-400 text-[11px] mt-0.5 font-normal">
+                Check chronological milestones and event slots.
+              </p>
+            </div>
+
+            {hackathon.scheduleItems.length === 0 ? (
+              <p className="text-zinc-400 italic text-sm py-4 text-center font-normal">
+                No schedule events are configured for this hackathon.
+              </p>
+            ) : (
+              <div className="relative border-l border-zinc-200 pl-5 ml-2.5 space-y-6 py-2">
+                {hackathon.scheduleItems.map((item) => (
+                  <div key={item.id} className="relative">
+                    <span className="absolute -left-[26px] top-1.5 w-3 h-3 rounded-full bg-white border-2 border-[#E61E32] ring-4 ring-red-50" />
+                    <p className="text-xs font-bold text-[#E61E32] tracking-wide">{item.time}</p>
+                    <p className="text-zinc-800 text-sm font-bold mt-0.5">{item.eventName}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Prizes Breakdown Section */}
+          <div className="bg-white border border-zinc-200 rounded-lg p-6 md:p-8 shadow-sm space-y-6">
+            <div className="border-b border-zinc-150 pb-3">
+              <h2 className="text-lg font-medium text-zinc-900">Prizes & Categories</h2>
+              <p className="text-zinc-400 text-[11px] mt-0.5 font-normal">
+                Review available tracks and reward distributions.
+              </p>
+            </div>
+
+            {hackathon.prizes.length === 0 ? (
+              <p className="text-zinc-400 italic text-sm py-4 text-center font-normal">
+                No prize breakdown levels have been declared.
+              </p>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {hackathon.prizes.map((prize) => (
+                  <div key={prize.id} className="border border-zinc-200 bg-zinc-50/50 p-5 rounded-lg space-y-1.5 flex flex-col justify-between">
+                    <div className="flex justify-between items-start gap-4">
+                      <span className="text-zinc-900 font-bold text-sm leading-snug">{prize.title}</span>
+                      <span className="text-[#E61E32] font-black text-sm shrink-0">{prize.value}</span>
+                    </div>
+                    {prize.description && (
+                      <p className="text-zinc-500 font-normal text-xs leading-relaxed pt-1 border-t border-dashed border-zinc-200 mt-2">
+                        {prize.description}
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* FAQ & Q&A Queries Section */}
+          <div className="bg-white border border-zinc-200 rounded-lg p-6 md:p-8 shadow-sm space-y-6">
+            <div className="border-b border-zinc-150 pb-3">
+              <h2 className="text-lg font-medium text-zinc-900">FAQ & Queries</h2>
+              <p className="text-zinc-400 text-[11px] mt-0.5 font-normal">
+                Find answers to common developer inquiries.
+              </p>
+            </div>
+
+            {hackathon.faqs.length === 0 ? (
+              <p className="text-zinc-400 italic text-sm py-4 text-center font-normal">
+                No FAQs configured.
+              </p>
+            ) : (
+              <FAQAccordion faqs={hackathon.faqs.map(f => ({ id: f.id, question: f.question, answer: f.answer }))} />
+            )}
+          </div>
+
+        </div>
+
+        {/* Sidebar Column (4 cols on lg) */}
+        <div className="lg:col-span-4 space-y-6">
+          <div className="bg-white border border-zinc-200 rounded-lg p-6 shadow-sm sticky top-24 space-y-6">
+            <div>
+              <p className="text-[10px] uppercase font-bold text-zinc-400 tracking-wider">Total Prize Pool</p>
+              <h2 className="text-3xl font-black text-[#E61E32] mt-1">{hackathon.prizePool}</h2>
+            </div>
+
+            <div className="border-t border-zinc-100 pt-5 space-y-4">
+              <div className="flex items-start gap-3">
+                <svg className="w-5 h-5 text-zinc-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                <div>
+                  <p className="text-[9px] uppercase tracking-wider font-bold text-zinc-400">Timeline</p>
+                  <p className="text-xs text-zinc-800 font-bold mt-0.5">{startDate}</p>
+                  <p className="text-xs text-zinc-500 font-medium">to {endDate}</p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3">
+                <svg className="w-5 h-5 text-zinc-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                <div>
+                  <p className="text-[9px] uppercase tracking-wider font-bold text-zinc-400">Location</p>
+                  <p className="text-xs text-zinc-800 font-bold mt-0.5 truncate max-w-[200px]">{hackathon.location}</p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3">
+                <svg className="w-5 h-5 text-zinc-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+                <div>
+                  <p className="text-[9px] uppercase tracking-wider font-bold text-zinc-400">Registrations</p>
+                  <p className="text-xs text-zinc-800 font-bold mt-0.5">{hackathon.registrations.length} Competitors</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Ticket Tiers / Pricing details */}
+            <div className="border-t border-zinc-100 pt-5 space-y-3">
+              <p className="text-[10px] uppercase font-bold text-zinc-400 tracking-wider">Tickets & Passes</p>
+              {hackathon.ticketTiers.length === 0 ? (
+                <div className="flex justify-between items-center bg-zinc-50 border border-zinc-200 rounded p-3 text-xs font-semibold">
+                  <span className="text-zinc-650">General Admission</span>
+                  <span className="text-green-700 font-extrabold">Free</span>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {hackathon.ticketTiers.map((tier) => (
+                    <Link
+                      key={tier.id}
+                      href={`/active-hacks/${hackathon.id}/register?tierId=${tier.id}`}
+                      className="flex justify-between items-center bg-zinc-50 border border-zinc-200 hover:border-zinc-300 rounded p-3 text-xs font-semibold transition-all hover:bg-zinc-100/50 block group cursor-pointer"
+                    >
+                      <span className="text-zinc-800 font-bold group-hover:text-[#E61E32] transition-colors">{tier.name}</span>
+                      <div className="text-right shrink-0">
+                        <span className="text-[#E61E32] font-black block">₹{tier.priceINR}</span>
+                        <span className="text-[8px] text-zinc-400 font-normal uppercase tracking-wider block">Choose</span>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Vertical Stacked Actions */}
+            <div className="border-t border-zinc-100 pt-5 flex flex-col gap-3 text-xs font-bold">
+              <Link
+                href={`/active-hacks/${hackathon.id}/register`}
+                className="w-full text-center bg-[#E61E32] hover:bg-[#c91527] text-white py-2.5 px-4 rounded transition-colors shadow-sm cursor-pointer"
+              >
+                Register to Compete
+              </Link>
+
+              {hackathon.locationLink ? (
+                <a
+                  href={hackathon.locationLink}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="w-full text-center border border-zinc-300 hover:bg-zinc-50 hover:border-zinc-400 rounded bg-white text-zinc-700 py-2.5 px-4 transition-colors cursor-pointer"
+                >
+                  View Location Map
+                </a>
+              ) : null}
+
+              <Link
+                href={`/team/login?hackathonId=${hackathon.id}`}
+                className="w-full text-center border border-[#E61E32] hover:bg-red-50 text-[#E61E32] py-2.5 px-4 rounded transition-colors cursor-pointer"
+              >
+                Team Lead Login
+              </Link>
+            </div>
+          </div>
+        </div>
+
+      </main>
+    </div>
+  );
+}
