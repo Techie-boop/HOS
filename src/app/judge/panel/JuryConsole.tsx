@@ -353,8 +353,8 @@ export default function JuryConsole({
           <div className="space-y-6 animate-in fade-in duration-150">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
-                <h3 className="font-extrabold text-zinc-550 text-xs uppercase tracking-wider">Competing Teams</h3>
-                <p className="text-[11px] text-zinc-400 mt-1">
+                <h3 className="font-black text-zinc-950 text-xs uppercase tracking-wider">Competing Teams</h3>
+                <p className="text-[11px] text-zinc-800 font-semibold mt-1">
                   Click on any team card to open the evaluation side panel and assign marks.
                 </p>
               </div>
