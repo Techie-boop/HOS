@@ -54,6 +54,19 @@ export async function teamSignUpAction(prevState: any, formData: FormData) {
       },
     });
 
+    // Create system notification message in general channel
+    await prisma.message.create({
+      data: {
+        content: `System added ${teamLeadName} (Team Lead) to the console.`,
+        channelId: "general",
+        senderName: "System",
+        senderAvatar: "⚙️",
+        senderRole: "System",
+        teamId: team.id,
+        hackathonId: hackathonId,
+      },
+    });
+
     await setTeamSessionCookie(team.id);
   } catch (err: any) {
     if (err.digest && err.digest.startsWith("NEXT_REDIRECT")) {
@@ -167,6 +180,25 @@ export async function joinTeamAction(prevState: any, formData: FormData) {
         teamId,
       },
     });
+
+    const team = await prisma.team.findUnique({
+      where: { id: teamId },
+    });
+
+    if (team) {
+      // Create system notification message in general channel
+      await prisma.message.create({
+        data: {
+          content: `System added ${fullName} (Team Member) to the console.`,
+          channelId: "general",
+          senderName: "System",
+          senderAvatar: "⚙️",
+          senderRole: "System",
+          teamId: teamId,
+          hackathonId: team.hackathonId,
+        },
+      });
+    }
 
     await setTeamSessionCookie(member.id);
   } catch (err: any) {

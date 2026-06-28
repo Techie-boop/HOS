@@ -12,6 +12,7 @@ export default function TeamSubNavbar() {
     { name: "Messages", href: "/team/dashboard/messages" },
     { name: "Connect with Jury", href: "/team/dashboard/jury" },
     { name: "Roast My Site", href: "/team/dashboard/roast" },
+    { name: "Ideate & Validate", href: "/team/dashboard/ideate" },
   ];
 
   return (

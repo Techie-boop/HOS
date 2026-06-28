@@ -1,48 +1,66 @@
 "use client";
 
-import { useState } from "react";
-import { Flame, Terminal, Play, AlertTriangle, ShieldAlert, Sparkles, RefreshCw } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Flame, Terminal, Play, AlertTriangle, ShieldAlert, Sparkles, RefreshCw, Loader2, CheckSquare } from "lucide-react";
+import { fetchProjectSubmissionAction, saveRoastAction, fetchRoastsAction } from "../../../actions/team-feature-actions";
 
 interface RoastLog {
   type: "info" | "warning" | "burn" | "success";
   text: string;
 }
 
+interface HistoricalRoast {
+  id: string;
+  liveUrl: string;
+  verdict: string;
+  burnLevel: string;
+  createdAt: Date;
+}
+
 export default function TeamRoastPage() {
-  const [siteUrl, setSiteUrl] = useState("https://hackos-console.vercel.app");
+  const [siteUrl, setSiteUrl] = useState("");
+  const [projectName, setProjectName] = useState("");
+  const [projectDescription, setProjectDescription] = useState("");
+  
   const [isRoasting, setIsRoasting] = useState(false);
   const [roastDone, setRoastDone] = useState(false);
   const [logs, setLogs] = useState<RoastLog[]>([]);
   const [burnLevel, setBurnLevel] = useState("Mild");
+  const [verdict, setVerdict] = useState("");
+  
+  const [history, setHistory] = useState<HistoricalRoast[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const roastDatabase = [
-    {
-      level: "Inferno (Extra Spicy)",
-      logs: [
-        { type: "info", text: "🔍 Analyzing project assets & bundle size..." },
-        { type: "warning", text: "⚠️ Found 4.2MB of uncompressed high-resolution memes in /public directory." },
-        { type: "burn", text: "🔥 Your LCP is so slow, users could finish a Next.js certification while waiting for the hero image to load." },
-        { type: "info", text: "🔍 Checking database configuration..." },
-        { type: "warning", text: "⚠️ Schema check: 12 relation tables detected with ZERO database indexes." },
-        { type: "burn", text: "🔥 You have more relationships in schema.prisma than in real life, yet your search queries are running slower than dial-up internet." },
-        { type: "info", text: "🔍 Checking color palettes..." },
-        { type: "burn", text: "🔥 That #E61E32 red is so bright it violates the Geneva Convention on laser hazards. Dial it down to HSL, please." },
-        { type: "success", text: "🎉 Roast completed. Overall Verdict: A beautiful disaster. 4/10." },
-      ] as RoastLog[],
-    },
-    {
-      level: "Scorch (Spicy)",
-      logs: [
-        { type: "info", text: "🔍 Inspecting framework configuration..." },
-        { type: "info", text: "💡 Next.js 16.2.9 detected. Welcome to the future." },
-        { type: "burn", text: "🔥 You are using Next.js Turbopack but still loading 47 different custom CSS styles like it's 2008." },
-        { type: "info", text: "🔍 Auditing page metadata..." },
-        { type: "warning", text: "⚠️ Meta description length: 8 characters ('cool site')." },
-        { type: "burn", text: "🔥 Search engines will index this page directly into the trash bin. Please read SEO best practices." },
-        { type: "success", text: "🎉 Roast completed. Overall Verdict: Code compiles, design cries. 6/10." },
-      ] as RoastLog[],
-    },
-  ];
+  const loadData = async () => {
+    setIsLoading(true);
+    try {
+      const submission = await fetchProjectSubmissionAction();
+      if (submission) {
+        setSiteUrl(submission.liveUrl || "");
+        setProjectName(submission.projectName || "");
+        setProjectDescription(submission.description || "");
+      }
+      
+      const roasts = await fetchRoastsAction();
+      setHistory(
+        roasts.map((r) => ({
+          id: r.id,
+          liveUrl: r.liveUrl,
+          verdict: r.verdict,
+          burnLevel: r.burnLevel,
+          createdAt: new Date(r.createdAt),
+        }))
+      );
+    } catch (err) {
+      console.error("Error loading project submission or roasts:", err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadData();
+  }, []);
 
   const handleStartRoast = (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,35 +70,117 @@ export default function TeamRoastPage() {
     setRoastDone(false);
     setLogs([]);
 
-    // Select a roast random scenario
-    const selectedRoast = roastDatabase[Math.floor(Math.random() * roastDatabase.length)];
-    setBurnLevel(selectedRoast.level);
+    // Generate dynamic logs based on project properties
+    const dynamicLogs: RoastLog[] = [
+      { type: "info", text: `🔍 Running static review for target: ${siteUrl}` },
+      { type: "info", text: `💡 Detected project name: "${projectName || "Untitled Hack"}"` },
+    ];
+
+    if (!projectName) {
+      dynamicLogs.push({
+        type: "warning",
+        text: "⚠️ Project Name is blank in database. That makes it hard for users (and judges) to remember you.",
+      });
+    }
+
+    if (!projectDescription || projectDescription.length < 20) {
+      dynamicLogs.push({
+        type: "burn",
+        text: "🔥 Your project description is shorter than a tweet. Did you give up writing it midway?",
+      });
+    } else {
+      dynamicLogs.push({
+        type: "info",
+        text: `🔍 Auditing description: "${projectDescription.substring(0, 60)}..."`,
+      });
+      if (projectDescription.toLowerCase().includes("ai") || projectDescription.toLowerCase().includes("wrapper")) {
+        dynamicLogs.push({
+          type: "burn",
+          text: "🔥 Found 'AI' in description. Is this a real product, or is it another GPT-4 API wrapper with a custom CSS theme?",
+        });
+      }
+    }
+
+    // Dynamic checks on URL
+    if (siteUrl.includes("vercel.app") || siteUrl.includes("netlify.app")) {
+      dynamicLogs.push({
+        type: "info",
+        text: "💡 Site is hosted on a free-tier hosting platform. Classic hackathon deployment.",
+      });
+    } else {
+      dynamicLogs.push({
+        type: "info",
+        text: "🔍 Target site utilizes a custom domain name. Staging server seems professional.",
+      });
+    }
+
+    // Standard technical burns
+    dynamicLogs.push(
+      { type: "info", text: "🔍 Analyzing Prisma schemas and DB indexes..." },
+      { type: "warning", text: "⚠️ Found 12 relational database tables with zero manual index keys." },
+      { type: "burn", text: "🔥 Enjoy that 5-second database response delay. Your search inputs will load slower than dial-up internet." },
+      { type: "info", text: "🔍 Auditing design systems & theme tokens..." },
+      { type: "burn", text: "🔥 That palette uses generic red/blue elements. It is screaming at users instead of offering high-fidelity feedback." }
+    );
+
+    const calculatedBurn = projectName ? "Scorch (Spicy)" : "Inferno (Extra Spicy)";
+    const calculatedVerdict = projectName 
+      ? "Prisma schemas need indexes, design needs custom palettes. 6/10." 
+      : "No project title, barebones description, database queries will crawl. 3/10.";
+
+    dynamicLogs.push({
+      type: "success",
+      text: `🎉 Audit finished. Overall Verdict: ${calculatedVerdict}`,
+    });
 
     let currentLogIndex = 0;
-    const interval = setInterval(() => {
-      if (currentLogIndex < selectedRoast.logs.length) {
-        setLogs((prev) => [...prev, selectedRoast.logs[currentLogIndex]]);
+    const interval = setInterval(async () => {
+      if (currentLogIndex < dynamicLogs.length) {
+        const logToAppend = dynamicLogs[currentLogIndex];
+        setLogs((prev) => [...prev, logToAppend]);
         currentLogIndex++;
       } else {
         clearInterval(interval);
+        
+        try {
+          // Save roast to PostgreSQL database
+          const saved = await saveRoastAction(
+            siteUrl,
+            calculatedBurn,
+            JSON.stringify(dynamicLogs),
+            calculatedVerdict
+          );
+          
+          setHistory((prev) => [
+            {
+              id: saved.id,
+              liveUrl: saved.liveUrl,
+              verdict: saved.verdict,
+              burnLevel: saved.burnLevel,
+              createdAt: new Date(saved.createdAt),
+            },
+            ...prev,
+          ]);
+        } catch (err) {
+          console.error("Failed to save roast:", err);
+        }
+
+        setBurnLevel(calculatedBurn);
+        setVerdict(calculatedVerdict);
         setIsRoasting(false);
         setRoastDone(true);
       }
-    }, 900);
+    }, 850);
   };
 
-  const getLogColor = (type: RoastLog["type"]) => {
-    switch (type) {
-      case "info":
-        return "text-zinc-400";
-      case "warning":
-        return "text-amber-400";
-      case "burn":
-        return "text-red-400 font-bold";
-      case "success":
-        return "text-emerald-400 font-bold";
-    }
-  };
+  if (isLoading) {
+    return (
+      <div className="flex-grow flex flex-col items-center justify-center p-12">
+        <Loader2 className="w-8 h-8 text-[#E61E32] animate-spin" />
+        <span className="text-xs text-zinc-400 font-bold mt-2">Loading Project Data...</span>
+      </div>
+    );
+  }
 
   return (
     <div className="flex-grow p-6 md:p-8 max-w-[1400px] w-full space-y-8 animate-in fade-in duration-200">
@@ -99,15 +199,22 @@ export default function TeamRoastPage() {
       {/* Link Submission */}
       <section className="bg-white border border-zinc-200 p-5 rounded-none shadow-sm space-y-4">
         <h3 className="text-xs font-bold text-zinc-900 uppercase tracking-wider">
-          Enter Your Project Credentials
+          Enter Your Project URL
         </h3>
         
+        {!siteUrl && (
+          <div className="bg-amber-50 border border-amber-200 text-amber-800 text-xs p-3 font-semibold mb-2">
+            💡 Note: You haven't submitted a project or live URL in the "Project Submission" page yet. We recommend setting one up there first, or you can test by typing below.
+          </div>
+        )}
+
         <form onSubmit={handleStartRoast} className="flex flex-col sm:flex-row gap-3">
           <input
             type="url"
             value={siteUrl}
             onChange={(e) => setSiteUrl(e.target.value)}
             disabled={isRoasting}
+            required
             placeholder="https://your-hackathon-project.vercel.app"
             className="flex-1 bg-zinc-50 border border-zinc-200 text-xs px-4 py-2.5 rounded-none font-semibold focus:outline-none focus:border-[#E61E32] focus:bg-white transition-all shadow-inner"
           />
@@ -119,7 +226,7 @@ export default function TeamRoastPage() {
             {isRoasting ? (
               <>
                 <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                <span>Auditing Codebase...</span>
+                <span>Auditing...</span>
               </>
             ) : (
               <>
@@ -150,18 +257,13 @@ export default function TeamRoastPage() {
 
           {/* Terminal Component */}
           <div className="bg-zinc-950 border border-zinc-800 text-zinc-200 font-mono text-[11px] p-5 shadow-2xl rounded-none relative overflow-hidden select-none">
-            
-            {/* Top dots */}
             <div className="flex gap-1.5 mb-4 shrink-0 pb-3 border-b border-zinc-900">
               <span className="w-2.5 h-2.5 rounded-full bg-red-500/80" />
               <span className="w-2.5 h-2.5 rounded-full bg-amber-500/80" />
               <span className="w-2.5 h-2.5 rounded-full bg-emerald-500/80" />
             </div>
 
-            {/* Logs Area */}
             <div className="space-y-3.5 min-h-[220px] max-h-[400px] overflow-y-auto pr-2 scrollbar-none">
-              
-              {/* Static starting logs */}
               <div className="text-zinc-500">
                 $ hackos-audit --target={siteUrl}
               </div>
@@ -170,30 +272,78 @@ export default function TeamRoastPage() {
                 <span>Initializing HackOS roasting engine...</span>
               </div>
 
-              {/* Dynamic logs */}
-              {logs.map((log, idx) => (
-                <div key={idx} className={`leading-relaxed animate-in slide-in-from-bottom-2 fade-in duration-300 ${getLogColor(log.type)}`}>
-                  {log.text}
-                </div>
-              ))}
+              {logs.map((log, idx) => {
+                const getLogColor = (type: RoastLog["type"]) => {
+                  switch (type) {
+                    case "info": return "text-zinc-400";
+                    case "warning": return "text-amber-400";
+                    case "burn": return "text-red-400 font-bold";
+                    case "success": return "text-emerald-400 font-bold";
+                  }
+                };
+                return (
+                  <div key={idx} className={`leading-relaxed animate-in slide-in-from-bottom-2 fade-in duration-300 ${getLogColor(log.type)}`}>
+                    {log.text}
+                  </div>
+                );
+              })}
               
-              {/* Input blinking cursor when roasting */}
               {isRoasting && (
                 <div className="flex items-center gap-1">
                   <span className="w-1.5 h-3.5 bg-zinc-400 animate-ping" />
                 </div>
               )}
-
             </div>
 
-            {/* Corner Decorative elements */}
             <div className="absolute right-4 bottom-4 opacity-5 pointer-events-none select-none">
               <ShieldAlert className="w-48 h-48 text-white" />
             </div>
-
           </div>
         </section>
       )}
+
+      {/* Historical Roasts */}
+      <section className="space-y-4">
+        <h3 className="text-sm font-bold text-zinc-800 tracking-tight flex items-center gap-2">
+          <CheckSquare className="w-4 h-4 text-[#E61E32]" />
+          Audit History
+        </h3>
+        
+        {history.length > 0 ? (
+          <div className="bg-white border border-zinc-200 rounded-none shadow-sm overflow-x-auto">
+            <table className="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr className="bg-zinc-50 border-b border-zinc-200 font-bold text-zinc-500 text-[10px] uppercase tracking-wider">
+                  <th className="p-3">Audit Date</th>
+                  <th className="p-3">Target URL</th>
+                  <th className="p-3">Burn Severity</th>
+                  <th className="p-3">Verdict</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-zinc-200 font-medium text-zinc-700">
+                {history.map((r) => (
+                  <tr key={r.id} className="hover:bg-zinc-50/50">
+                    <td className="p-3 font-semibold">
+                      {r.createdAt.toLocaleDateString()} {r.createdAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </td>
+                    <td className="p-3 font-mono text-zinc-650 max-w-[200px] truncate">{r.liveUrl}</td>
+                    <td className="p-3">
+                      <span className="bg-red-50 border border-red-200 text-red-700 text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-sm">
+                        {r.burnLevel}
+                      </span>
+                    </td>
+                    <td className="p-3 text-zinc-500 font-normal leading-relaxed">{r.verdict}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div className="bg-white border border-zinc-200 p-8 text-center text-xs text-zinc-400 font-semibold shadow-sm">
+            No previous website roasts have been logged for this team.
+          </div>
+        )}
+      </section>
 
     </div>
   );

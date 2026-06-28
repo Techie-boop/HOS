@@ -48,6 +48,7 @@ model Hackathon {
   judges             Judge[]
   judgingGuidelines  JudgingGuideline[]
   projectSubmissions ProjectSubmission[]
+  messages           Message[]
   publishLeaderboard Boolean        @default(false)
   createdAt          DateTime       @default(now())
   updatedAt          DateTime       @updatedAt
@@ -134,6 +135,10 @@ model Team {
   tasks             Task[]
   taskLogs          TaskLog[]
   projectSubmission ProjectSubmission?
+  messages           Message[]
+  juryRequests       JuryRequest[]
+  idea               Idea?
+  roasts             ProjectRoast[]
   createdAt         DateTime     @default(now())
   updatedAt         DateTime     @updatedAt
 }
@@ -195,6 +200,7 @@ model Judge {
   loginCodeExpiresAt DateTime?
   hackathonId        String
   hackathon          Hackathon @relation(fields: [hackathonId], references: [id], onDelete: Cascade)
+  juryRequests       JuryRequest[]
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt
 }
@@ -219,4 +225,55 @@ model ProjectSubmission {
   description   String?
   submittedAt   DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
+}
+
+model Message {
+  id           String    @id @default(uuid())
+  content      String
+  senderName   String
+  senderAvatar String
+  senderRole   String
+  channelId    String
+  teamId       String?
+  team         Team?     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  hackathonId  String
+  hackathon    Hackathon @relation(fields: [hackathonId], references: [id], onDelete: Cascade)
+  createdAt    DateTime  @default(now())
+}
+
+model JuryRequest {
+  id          String   @id @default(uuid())
+  type        String
+  notes       String?
+  status      String   @default("Pending")
+  judgeId     String
+  judge       Judge    @relation(fields: [judgeId], references: [id], onDelete: Cascade)
+  teamId      String
+  team        Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  requestedAt DateTime @default(now())
+}
+
+model Idea {
+  id               String   @id @default(uuid())
+  problem          String
+  solution         String
+  targetAudience   String
+  feasibilityScore Int      @default(0)
+  marketFitScore   Int      @default(0)
+  complexity       String   @default("Medium")
+  teamId           String   @unique
+  team             Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+model ProjectRoast {
+  id        String   @id @default(uuid())
+  liveUrl   String
+  verdict   String
+  burnLevel String
+  logsJson  String
+  teamId    String
+  team      Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
 }
