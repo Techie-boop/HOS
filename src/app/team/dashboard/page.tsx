@@ -23,10 +23,9 @@ export default async function TeamOverviewPage() {
   const completedTasks = tasks.filter((t) => t.status === "COMPLETED").length;
   const completionRate = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
 
-  // Determine team number by ranking alphabetically within this hackathon
+  // Determine team number by ranking globally based on registration time
   const allTeams = await prisma.team.findMany({
-    where: { hackathonId: team.hackathonId },
-    orderBy: { teamName: "asc" },
+    orderBy: { createdAt: "asc" },
     select: { id: true },
   });
   const teamNumber = allTeams.findIndex((t) => t.id === team.id) + 1;
