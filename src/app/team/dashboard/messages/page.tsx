@@ -43,7 +43,7 @@ const getBubbleColors = (name: string, isMe: boolean) => {
     return {
       bg: "bg-indigo-50",
       border: "border-indigo-300",
-      senderText: "text-indigo-700"
+      senderText: "text-indigo-750"
     };
   }
   
@@ -54,7 +54,7 @@ const getBubbleColors = (name: string, isMe: boolean) => {
     { bg: "bg-amber-55", border: "border-amber-300", senderText: "text-amber-700" },
     { bg: "bg-teal-55", border: "border-teal-300", senderText: "text-teal-700" },
     { bg: "bg-rose-55", border: "border-rose-300", senderText: "text-rose-700" },
-    { bg: "bg-blue-50", border: "border-blue-300", senderText: "text-blue-700" }
+    { bg: "bg-blue-50", border: "border-blue-300", senderText: "text-blue-755" }
   ];
   
   let hash = 0;
@@ -63,6 +63,20 @@ const getBubbleColors = (name: string, isMe: boolean) => {
   }
   const index = Math.abs(hash) % themes.length;
   return themes[index];
+};
+
+const renderSystemMessage = (content: string) => {
+  const prefix = "System added ";
+  const suffix = " to the console.";
+  if (content.startsWith(prefix) && content.endsWith(suffix)) {
+    const namePart = content.slice(prefix.length, -suffix.length);
+    return (
+      <>
+        System added <span className="text-[#E61E32] font-black">{namePart}</span> to the console.
+      </>
+    );
+  }
+  return content;
 };
 
 export default function TeamMessagesPage() {
@@ -254,8 +268,8 @@ export default function TeamMessagesPage() {
               if (isSystem) {
                 return (
                   <div key={msg.id} className="flex justify-center w-full my-2 animate-in fade-in duration-200">
-                    <span className="bg-zinc-100 border border-zinc-200 text-zinc-555 text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider">
-                      ⚙️ {msg.content}
+                    <span className="bg-zinc-100 border border-zinc-200 text-zinc-555 text-[10px] font-semibold px-3 py-1 rounded-full tracking-wide">
+                      {renderSystemMessage(msg.content)}
                     </span>
                   </div>
                 );
@@ -326,7 +340,7 @@ export default function TeamMessagesPage() {
               <img
                 src="https://cdni.iconscout.com/illustration/premium/thumb/no-messages-illustration-svg-download-png-7973910.png"
                 alt="No messages"
-                className="w-48 h-48 object-contain mb-4 select-none pointer-events-none"
+                className="w-72 h-72 object-contain mb-4 select-none pointer-events-none"
               />
               <h5 className="text-xs font-bold text-zinc-700">No live messages yet</h5>
               <p className="text-[11px] text-zinc-400 font-normal mt-0.5">Be the first to send a message on this database channel!</p>
