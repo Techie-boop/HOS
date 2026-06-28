@@ -2,6 +2,7 @@ import { getSessionTeam } from "../../../lib/auth";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import TeamSidebar from "./TeamSidebar";
+import { prisma } from "../../../lib/db";
 
 export default async function TeamDashboardLayout({
   children,
@@ -13,6 +14,14 @@ export default async function TeamDashboardLayout({
   if (!team) {
     redirect("/team/login");
   }
+
+  // Determine team number by ranking alphabetically within this hackathon
+  const allTeams = await prisma.team.findMany({
+    where: { hackathonId: team.hackathonId },
+    orderBy: { teamName: "asc" },
+    select: { id: true },
+  });
+  const teamNumber = allTeams.findIndex((t) => t.id === team.id) + 1;
 
   return (
     /*
@@ -37,6 +46,9 @@ export default async function TeamDashboardLayout({
         </div>
 
         <div className="flex gap-3 items-center">
+          <span className="bg-white/15 text-white border border-white/20 text-xs px-2.5 py-1 font-black uppercase tracking-wider rounded-md">
+            Team #{teamNumber}
+          </span>
           <Link
             href={`/team/invite?joinCode=${team.joinCode}`}
             className="bg-white hover:bg-zinc-50 text-[#E61E32] border border-zinc-200 font-bold py-1.5 px-4 rounded text-xs transition-colors shadow-sm cursor-pointer"

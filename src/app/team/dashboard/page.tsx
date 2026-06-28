@@ -23,13 +23,26 @@ export default async function TeamOverviewPage() {
   const completedTasks = tasks.filter((t) => t.status === "COMPLETED").length;
   const completionRate = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
 
+  // Determine team number by ranking alphabetically within this hackathon
+  const allTeams = await prisma.team.findMany({
+    where: { hackathonId: team.hackathonId },
+    orderBy: { teamName: "asc" },
+    select: { id: true },
+  });
+  const teamNumber = allTeams.findIndex((t) => t.id === team.id) + 1;
+
   return (
     <main className="flex-grow p-6 md:p-8 max-w-[1400px] w-full space-y-6 animate-in fade-in duration-200">
       
       {/* 1. Welcome Profile Card (Reduced height & sharp edges) */}
       <section className="bg-white border border-zinc-200 rounded-none p-4 md:p-5 shadow-sm flex flex-col justify-between items-start gap-1">
-        <span className="text-[10px] uppercase tracking-widest text-[#E61E32] font-extrabold">Active Team Portal</span>
-        <h2 className="text-xl md:text-2xl font-bold tracking-tight text-zinc-900 mt-0.5">
+        <div className="flex items-center justify-between w-full">
+          <span className="text-[10px] uppercase tracking-widest text-[#E61E32] font-extrabold">Active Team Portal</span>
+          <span className="bg-red-50 text-[#E61E32] border border-red-200 text-xs px-2.5 py-0.5 font-black uppercase tracking-wider rounded-md">
+            Team #{teamNumber}
+          </span>
+        </div>
+        <h2 className="text-xl md:text-2xl font-bold tracking-tight text-zinc-900 mt-1">
           Welcome back, {team.user.fullName}
         </h2>
         <div className="text-xs text-zinc-500 font-normal mt-0.5 flex flex-wrap items-center gap-2">
