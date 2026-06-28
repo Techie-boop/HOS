@@ -377,7 +377,7 @@ export default function JuryConsole({
                 <p className="text-[11px] text-zinc-400 mt-1">Once teams register, they will be listed here.</p>
               </div>
             ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+              <div className="grid grid-cols-[repeat(auto-fill,minmax(110px,1fr))] gap-3">
                 {localTeams.map((team, idx) => {
                   const isGraded = team.score > 0;
                   const isSelected = selectedTeam?.id === team.id;
@@ -400,30 +400,30 @@ export default function JuryConsole({
                     <button
                       key={team.id}
                       onClick={() => setSelectedTeam(team)}
-                      className={`flex flex-col items-center justify-between p-4 border rounded-xl shadow-xs cursor-pointer transition-all duration-150 hover:-translate-y-0.5 group text-center min-h-[142px] ${palette.bg} ${palette.border} ${
+                      className={`flex flex-col items-center justify-between p-3.5 border rounded-xl shadow-xs cursor-pointer transition-all duration-150 hover:-translate-y-0.5 group text-center w-full max-w-[110px] aspect-square ${palette.bg} ${palette.border} ${
                         isSelected 
                           ? "ring-2 ring-[#E61E32] border-[#E61E32] bg-white shadow-sm" 
                           : "hover:shadow-sm"
                       }`}
                     >
-                      <div className="flex flex-col items-center w-full">
-                        <span className="text-[8px] font-black uppercase tracking-widest text-zinc-400 group-hover:text-zinc-500">
+                      <div className="flex flex-col items-center w-full min-w-0">
+                        <span className="text-[8px] font-black uppercase tracking-widest text-zinc-400 group-hover:text-zinc-500 leading-none">
                           Team
                         </span>
-                        <span className={`text-3xl font-black my-1.5 group-hover:scale-105 transition-transform duration-150 ${palette.text}`}>
+                        <span className={`text-2xl font-black my-0.5 group-hover:scale-105 transition-transform duration-150 leading-none ${palette.text}`}>
                           {idx + 1}
                         </span>
-                        <span className="text-[11px] font-bold text-zinc-750 truncate w-full px-1" title={team.teamName}>
+                        <span className="text-[10px] font-bold text-zinc-750 line-clamp-2 break-words w-full px-0.5 leading-tight" title={team.teamName}>
                           {team.teamName}
                         </span>
                       </div>
                       
                       {isGraded ? (
-                        <span className="mt-2 text-[8px] font-black uppercase tracking-widest px-2 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-250 rounded-md">
+                        <span className="text-[7.5px] font-black uppercase tracking-widest px-1.5 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-250 rounded-md shrink-0">
                           {team.score} Pts
                         </span>
                       ) : (
-                        <span className={`mt-2 text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md ${palette.badge}`}>
+                        <span className={`text-[7.5px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-md shrink-0 ${palette.badge}`}>
                           Pending
                         </span>
                       )}
