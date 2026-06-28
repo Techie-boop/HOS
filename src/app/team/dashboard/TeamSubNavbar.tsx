@@ -9,6 +9,9 @@ export default function TeamSubNavbar() {
   const links = [
     { name: "Overview", href: "/team/dashboard" },
     { name: "Team & Details", href: "/team/dashboard/team" },
+    { name: "Messages", href: "/team/dashboard/messages" },
+    { name: "Connect with Jury", href: "/team/dashboard/jury" },
+    { name: "Roast My Site", href: "/team/dashboard/roast" },
   ];
 
   return (

@@ -2,6 +2,7 @@ import { getSessionTeam } from "../../../lib/auth";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import TeamSidebar from "./TeamSidebar";
+import TeamSubNavbar from "./TeamSubNavbar";
 import { prisma } from "../../../lib/db";
 
 export default async function TeamDashboardLayout({
@@ -67,7 +68,8 @@ export default async function TeamDashboardLayout({
 
         {/* Scrollable content pane — ONLY this region scrolls */}
         <div className="flex-1 flex flex-col overflow-y-auto overflow-x-hidden">
-          <main className="flex-1">
+          <TeamSubNavbar />
+          <main className="flex-grow">
             {children}
           </main>
 
