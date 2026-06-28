@@ -96,11 +96,37 @@ export default async function Home() {
         </div>
       </main>
       {/* MVP Status Section */}
-      <section className="bg-white border-t border-b border-zinc-200 py-10 w-full shrink-0">
-        <div className="max-w-4xl mx-auto px-6 text-center">
-          <p className="text-zinc-500 text-xs md:text-sm font-medium leading-relaxed">
-            It is an MVP hence we set this Product to the Pilot testing.
-          </p>
+      <section className="py-12 w-full shrink-0 bg-zinc-50 border-t border-zinc-200">
+        <div className="max-w-4xl mx-auto px-6">
+          <div className="relative bg-white border border-zinc-200 p-6 rounded-2xl shadow-xs flex flex-col md:flex-row items-center justify-between gap-4 overflow-hidden group hover:border-[#E61E32]/20 transition-all duration-300">
+            
+            {/* Subtle background gradient glow */}
+            <div className="absolute -top-12 -left-12 w-32 h-32 bg-emerald-500/5 rounded-full blur-2xl group-hover:bg-[#E61E32]/5 transition-all duration-300" />
+            
+            <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 text-center sm:text-left relative z-10">
+              {/* Animated Glowing Dot Container */}
+              <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center shrink-0 border border-emerald-100 relative">
+                <span className="animate-ping absolute inline-flex h-4 w-4 rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+              </div>
+              
+              <div className="space-y-1">
+                <h4 className="text-sm font-black uppercase tracking-wider text-zinc-950">
+                  Live Pilot Testing Running
+                </h4>
+                <p className="text-xs text-zinc-500 font-normal leading-relaxed max-w-xl">
+                  This platform is currently running active developer tests. All database nodes, schedule handlers, and evaluation modules are fully operational.
+                </p>
+              </div>
+            </div>
+            
+            {/* Quick status badge */}
+            <div className="shrink-0 relative z-10">
+              <span className="bg-emerald-50 text-emerald-800 border border-emerald-200 text-[10px] font-black uppercase tracking-widest px-3.5 py-1 rounded-full">
+                Systems Active
+              </span>
+            </div>
+          </div>
         </div>
       </section>
 
