@@ -382,51 +382,64 @@ export default function JuryConsole({
                   const isGraded = team.score > 0;
                   const isSelected = selectedTeam?.id === team.id;
                   
-                  // Soft color palettes with enhanced readability and saturation
-                  const colorPalettes = [
-                    { bg: "bg-blue-50 hover:bg-blue-100/60", border: "border-blue-200 hover:border-blue-350", text: "text-blue-700", badge: "bg-blue-100 text-blue-800 border border-blue-300" },
-                    { bg: "bg-purple-50 hover:bg-purple-100/60", border: "border-purple-200 hover:border-purple-350", text: "text-purple-700", badge: "bg-purple-100 text-purple-800 border border-purple-300" },
-                    { bg: "bg-amber-50 hover:bg-amber-100/60", border: "border-amber-200 hover:border-amber-350", text: "text-amber-700", badge: "bg-amber-100 text-amber-800 border border-amber-300" },
-                    { bg: "bg-pink-50 hover:bg-pink-100/60", border: "border-pink-200 hover:border-pink-350", text: "text-pink-700", badge: "bg-pink-100 text-pink-800 border border-pink-300" },
-                    { bg: "bg-indigo-50 hover:bg-indigo-100/60", border: "border-indigo-200 hover:border-indigo-350", text: "text-indigo-700", badge: "bg-indigo-100 text-indigo-800 border border-indigo-300" },
-                    { bg: "bg-rose-50 hover:bg-rose-100/60", border: "border-rose-200 hover:border-rose-350", text: "text-rose-700", badge: "bg-rose-100 text-rose-800 border border-rose-300" },
-                    { bg: "bg-cyan-50 hover:bg-cyan-100/60", border: "border-cyan-200 hover:border-cyan-350", text: "text-cyan-700", badge: "bg-cyan-100 text-cyan-800 border border-cyan-300" },
-                    { bg: "bg-teal-50 hover:bg-teal-100/60", border: "border-teal-200 hover:border-teal-350", text: "text-teal-700", badge: "bg-teal-100 text-teal-800 border border-teal-300" },
-                  ];
-
-                  const palette = colorPalettes[idx % colorPalettes.length];
+                  // Pending = Light Red theme, Evaluated = Light Green theme
+                  const theme = isGraded
+                    ? {
+                        bg: "bg-emerald-50 hover:bg-emerald-100/50",
+                        border: "border-emerald-200 hover:border-emerald-350",
+                        text: "text-emerald-700",
+                        teamLabel: "text-emerald-500",
+                        teamName: "text-emerald-900",
+                        badge: "bg-emerald-100 text-emerald-800 border-emerald-300",
+                        dot: (
+                          <span className="absolute top-2.5 right-2.5 flex h-2 w-2">
+                            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                          </span>
+                        ),
+                      }
+                    : {
+                        bg: "bg-red-50 hover:bg-red-100/50",
+                        border: "border-red-200 hover:border-red-350",
+                        text: "text-red-600",
+                        teamLabel: "text-red-400",
+                        teamName: "text-red-950",
+                        badge: "bg-red-100 text-red-800 border-red-300",
+                        dot: (
+                          <span className="absolute top-2.5 right-2.5 flex h-2 w-2">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+                          </span>
+                        ),
+                      };
 
                   return (
                     <button
                       key={team.id}
                       onClick={() => setSelectedTeam(team)}
-                      className={`flex flex-col items-center justify-between p-4 border rounded-xl shadow-xs cursor-pointer transition-all duration-150 hover:-translate-y-0.5 group text-center w-full max-w-[130px] aspect-square ${palette.bg} ${palette.border} ${
+                      className={`relative flex flex-col items-center justify-between p-4 border rounded-2xl shadow-xs cursor-pointer transition-all duration-300 hover:-translate-y-1 hover:shadow-md group text-center w-full max-w-[130px] aspect-square ${theme.bg} ${theme.border} ${
                         isSelected 
                           ? "ring-2 ring-[#E61E32] border-[#E61E32] bg-white shadow-sm" 
                           : "hover:shadow-xs"
                       }`}
                     >
+                      {/* Top Right Live Pulse / Status Dot */}
+                      {theme.dot}
+
                       <div className="flex flex-col items-center w-full min-w-0">
-                        <span className="text-[10px] font-extrabold uppercase tracking-widest text-zinc-500 group-hover:text-zinc-650 leading-none">
+                        <span className={`text-[10px] font-extrabold uppercase tracking-widest leading-none ${theme.teamLabel}`}>
                           Team
                         </span>
-                        <span className={`text-4xl font-black my-1 group-hover:scale-105 transition-transform duration-150 leading-none ${palette.text}`}>
+                        <span className={`text-4xl font-black my-1 transition-transform duration-300 group-hover:scale-105 leading-none ${theme.text}`}>
                           {idx + 1}
                         </span>
-                        <span className="text-xs font-bold text-zinc-800 line-clamp-2 break-words w-full px-0.5 leading-tight" title={team.teamName}>
+                        <span className={`text-xs font-extrabold line-clamp-2 break-words w-full px-0.5 leading-tight ${theme.teamName}`} title={team.teamName}>
                           {team.teamName}
                         </span>
                       </div>
                       
-                      {isGraded ? (
-                        <span className="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-md shrink-0">
-                          {team.score} Pts
-                        </span>
-                      ) : (
-                        <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md shrink-0 ${palette.badge}`}>
-                          Pending
-                        </span>
-                      )}
+                      <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md shrink-0 border ${theme.badge}`}>
+                        {isGraded ? `${team.score} Pts` : "Pending"}
+                      </span>
                     </button>
                   );
                 })}
