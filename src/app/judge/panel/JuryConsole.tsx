@@ -1,6 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { toast } from "sonner";
+import { updateTeamScoreAction } from "../../actions/leaderboard-actions";
 import { 
   GitBranch, 
   Globe, 
@@ -28,11 +30,13 @@ interface Team {
   teamName: string;
   teamLeadName: string;
   email: string;
+  score: number;
   members: Member[];
 }
 
 interface Submission {
   id: string;
+  teamId: string;
   projectName: string | null;
   description: string | null;
   githubUrl: string;
@@ -91,11 +95,56 @@ export default function JuryConsole({
   guidelines,
 }: JuryConsoleProps) {
   const [activeTab, setActiveTab] = useState<"home" | "submissions" | "teams" | "messages" | "profile">("home");
+  const [localTeams, setLocalTeams] = useState<Team[]>(teams);
+  const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
+  const [scoreValue, setScoreValue] = useState<string>("");
+  const [isSaving, setIsSaving] = useState<boolean>(false);
+
+  useEffect(() => {
+    setLocalTeams(teams);
+  }, [teams]);
+
+  useEffect(() => {
+    if (selectedTeam) {
+      const currentTeam = localTeams.find((t) => t.id === selectedTeam.id);
+      setScoreValue(currentTeam ? currentTeam.score.toString() : "0");
+    }
+  }, [selectedTeam, localTeams]);
+
+  const handleSaveScore = async () => {
+    if (!selectedTeam) return;
+    const parsedScore = parseInt(scoreValue, 10);
+    if (isNaN(parsedScore) || parsedScore < 0 || parsedScore > 1000) {
+      toast.error("Please enter a valid score between 0 and 1000.");
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      const res = await updateTeamScoreAction(selectedTeam.id, parsedScore);
+      if (res.success) {
+        toast.success(`Successfully saved marks for ${selectedTeam.teamName}!`);
+        setLocalTeams((prev) =>
+          prev.map((t) => (t.id === selectedTeam.id ? { ...t, score: parsedScore } : t))
+        );
+      } else {
+        toast.error(res.error || "Failed to update score.");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("An unexpected error occurred while saving marks.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const selectedTeamIndex = selectedTeam ? localTeams.findIndex(t => t.id === selectedTeam.id) + 1 : 0;
+  const selectedTeamSubmission = selectedTeam ? submissions.find(s => s.teamId === selectedTeam.id) : undefined;
 
   const tabs = [
     { id: "home", name: "Home", count: null },
     { id: "submissions", name: "Submissions", count: submissions.length },
-    { id: "teams", name: "Teams", count: teams.length },
+    { id: "teams", name: "Teams", count: localTeams.length },
     { id: "messages", name: "Messages", count: announcements.length },
     { id: "profile", name: "Profile", count: null },
   ] as const;
@@ -301,49 +350,71 @@ export default function JuryConsole({
         )}
 
         {activeTab === "teams" && (
-          <div className="space-y-4 animate-in fade-in duration-150">
-            <h3 className="font-extrabold text-zinc-550 text-xs uppercase tracking-wider">Competing Teams</h3>
+          <div className="space-y-6 animate-in fade-in duration-150">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <h3 className="font-extrabold text-zinc-550 text-xs uppercase tracking-wider">Competing Teams</h3>
+                <p className="text-[11px] text-zinc-400 mt-1">
+                  Click on any team card to open the evaluation side panel and assign marks.
+                </p>
+              </div>
+              <div className="flex items-center gap-4 text-xs font-bold text-zinc-500">
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 bg-emerald-550 border border-emerald-300 inline-block bg-emerald-500"></span>
+                  <span>Graded ({localTeams.filter((t) => t.score > 0).length})</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 bg-zinc-300 border border-zinc-400 inline-block bg-zinc-100"></span>
+                  <span>Pending ({localTeams.filter((t) => !t.score || t.score === 0).length})</span>
+                </div>
+              </div>
+            </div>
             
-            {teams.length === 0 ? (
+            {localTeams.length === 0 ? (
               <div className="bg-white border border-zinc-300 rounded-none p-16 text-center shadow-sm">
                 <Users className="w-10 h-10 text-zinc-200 mx-auto mb-3" />
                 <p className="text-xs font-bold text-zinc-500">No teams competing yet</p>
                 <p className="text-[11px] text-zinc-400 mt-1">Once teams register, they will be listed here.</p>
               </div>
             ) : (
-              <div className="bg-white border border-zinc-300 rounded-none shadow-sm overflow-x-auto w-full">
-                <table className="min-w-full divide-y divide-zinc-200 text-left text-xs">
-                  <thead className="bg-zinc-50 text-[10px] font-extrabold uppercase tracking-wider text-zinc-500">
-                    <tr>
-                      <th className="px-6 py-4">Team Name</th>
-                      <th className="px-6 py-4">Team Lead</th>
-                      <th className="px-6 py-4">Contact</th>
-                      <th className="px-6 py-4">Members</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-zinc-150 bg-white text-zinc-700">
-                    {teams.map((team) => (
-                      <tr key={team.id} className="hover:bg-zinc-50/50 transition-colors">
-                        <td className="px-6 py-4 font-bold text-zinc-950">{team.teamName}</td>
-                        <td className="px-6 py-4 font-semibold">{team.teamLeadName}</td>
-                        <td className="px-6 py-4 font-normal text-zinc-500">{team.email}</td>
-                        <td className="px-6 py-4">
-                          {team.members.length > 0 ? (
-                            <div className="flex flex-wrap gap-1.5">
-                              {team.members.map((m) => (
-                                <span key={m.id} className="bg-zinc-100 text-zinc-650 px-2 py-0.5 border border-zinc-200 text-[10px] font-medium" title={m.email}>
-                                  {m.fullName}
-                                </span>
-                              ))}
-                            </div>
-                          ) : (
-                            <span className="text-zinc-400 text-[10px]">Lead Only</span>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+                {localTeams.map((team, idx) => {
+                  const isGraded = team.score > 0;
+                  const isSelected = selectedTeam?.id === team.id;
+                  return (
+                    <button
+                      key={team.id}
+                      onClick={() => setSelectedTeam(team)}
+                      className={`flex flex-col items-center justify-between p-5 bg-white border rounded-none shadow-sm cursor-pointer transition-all duration-150 hover:-translate-y-0.5 group text-center min-h-[180px] ${
+                        isSelected 
+                          ? "border-[#E61E32] ring-2 ring-[#E61E32]/10" 
+                          : "border-zinc-300 hover:border-zinc-450 hover:shadow-md"
+                      }`}
+                    >
+                      <div className="flex flex-col items-center w-full">
+                        <span className="text-[9px] font-extrabold uppercase tracking-widest text-zinc-400 group-hover:text-zinc-500">
+                          Team
+                        </span>
+                        <span className="text-5xl font-black text-zinc-800 my-3 group-hover:scale-105 transition-transform duration-150">
+                          {idx + 1}
+                        </span>
+                        <span className="text-xs font-bold text-zinc-700 truncate w-full px-1" title={team.teamName}>
+                          {team.teamName}
+                        </span>
+                      </div>
+                      
+                      {isGraded ? (
+                        <span className="mt-3 text-[9px] font-black uppercase tracking-widest px-2 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200">
+                          {team.score} Pts
+                        </span>
+                      ) : (
+                        <span className="mt-3 text-[9px] font-black uppercase tracking-widest px-2 py-0.5 bg-zinc-50 text-zinc-400 border border-zinc-200">
+                          Pending
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
               </div>
             )}
           </div>
@@ -439,7 +510,241 @@ export default function JuryConsole({
           </div>
         )}
 
+
       </div>
+
+      {/* Side Panel for Team Evaluation */}
+      {selectedTeam && (
+        <>
+          {/* Backdrop */}
+          <div 
+            className="fixed inset-0 bg-zinc-900/40 backdrop-blur-sm z-40 transition-opacity animate-in fade-in duration-200"
+            onClick={() => setSelectedTeam(null)}
+          />
+          
+          {/* Drawer Panel */}
+          <div className="fixed inset-y-0 right-0 w-full max-w-md bg-white shadow-2xl z-50 flex flex-col border-l border-zinc-200 animate-in slide-in-from-right duration-250">
+            {/* Header */}
+            <div className="p-6 border-b border-zinc-200 flex items-center justify-between shrink-0">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-[9px] font-black uppercase tracking-widest bg-red-50 text-[#E61E32] border border-red-200 px-2 py-0.5">
+                    Live Evaluation
+                  </span>
+                  {selectedTeamSubmission && (
+                    <span className="text-[9px] font-black uppercase tracking-widest bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5">
+                      Submitted
+                    </span>
+                  )}
+                </div>
+                <h3 className="text-lg font-extrabold text-zinc-900 mt-2">
+                  Team {selectedTeamIndex}
+                </h3>
+                <p className="text-xs text-zinc-550 font-bold mt-0.5">
+                  {selectedTeam.teamName}
+                </p>
+              </div>
+              <button 
+                onClick={() => setSelectedTeam(null)}
+                className="text-zinc-400 hover:text-zinc-700 transition-colors p-2 text-2xl font-light cursor-pointer focus:outline-none"
+              >
+                &times;
+              </button>
+            </div>
+
+            {/* Scrollable Content */}
+            <div className="flex-1 overflow-y-auto p-6 space-y-6">
+              {/* Score Evaluation Section */}
+              <div className="space-y-3">
+                <h4 className="text-[10px] font-black uppercase tracking-wider text-zinc-400">
+                  Assign Evaluation Marks
+                </h4>
+                
+                <div className="bg-zinc-50 border border-zinc-300 p-5 space-y-4">
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-zinc-700 block">
+                      Score / Points (Max 1000)
+                    </label>
+                    
+                    <div className="flex items-center gap-3">
+                      <input 
+                        type="number"
+                        min="0"
+                        max="1000"
+                        value={scoreValue}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          if (val === "" || (/^\d+$/.test(val) && parseInt(val, 10) <= 1000)) {
+                            setScoreValue(val);
+                          }
+                        }}
+                        className="bg-white border border-zinc-300 font-extrabold text-lg text-zinc-900 p-2.5 w-32 text-center focus:outline-none focus:border-[#E61E32] focus:ring-1 focus:ring-[#E61E32] tabular-nums"
+                        placeholder="0"
+                      />
+                      <div className="flex-1">
+                        {/* Visual Progress Bar */}
+                        <div className="w-full bg-zinc-200 h-2 rounded-none overflow-hidden">
+                          <div 
+                            className="bg-[#E61E32] h-full transition-all duration-300"
+                            style={{ width: `${Math.min(100, (parseInt(scoreValue || "0", 10) / 1000) * 100)}%` }}
+                          />
+                        </div>
+                        <div className="flex justify-between text-[9px] font-bold text-zinc-450 mt-1">
+                          <span>0 pts</span>
+                          <span>1000 pts</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Preset Quick Actions */}
+                  <div className="space-y-2 border-t border-zinc-200 pt-3.5">
+                    <span className="text-[9px] font-extrabold uppercase tracking-wider text-zinc-400 block">
+                      Preset Scores / Adjustments
+                    </span>
+                    <div className="flex flex-wrap gap-2">
+                      {[100, 300, 500, 700, 900].map((preset) => (
+                        <button
+                          key={preset}
+                          type="button"
+                          onClick={() => setScoreValue(preset.toString())}
+                          className="bg-white hover:bg-zinc-100 text-zinc-700 border border-zinc-300 font-bold text-[10px] px-2.5 py-1.5 transition-colors cursor-pointer"
+                        >
+                          {preset}
+                        </button>
+                      ))}
+                    </div>
+                    
+                    <div className="flex flex-wrap gap-2 pt-1">
+                      {[-50, -10, 10, 50].map((adj) => (
+                        <button
+                          key={adj}
+                          type="button"
+                          onClick={() => {
+                            const curr = parseInt(scoreValue || "0", 10);
+                            const next = Math.max(0, Math.min(1000, curr + adj));
+                            setScoreValue(next.toString());
+                          }}
+                          className={`font-bold text-[10px] px-2.5 py-1.5 border transition-colors cursor-pointer ${
+                            adj > 0 
+                              ? "bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border-emerald-250" 
+                              : "bg-red-50 hover:bg-red-100 text-red-700 border-red-250"
+                          }`}
+                        >
+                          {adj > 0 ? `+${adj}` : adj}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={handleSaveScore}
+                    disabled={isSaving}
+                    className="w-full bg-[#E61E32] hover:bg-[#c91527] disabled:bg-zinc-300 text-white font-extrabold text-xs uppercase tracking-wider py-3 mt-2 shadow-sm transition-colors cursor-pointer text-center"
+                  >
+                    {isSaving ? "Saving Evaluation..." : "Save Evaluation Marks"}
+                  </button>
+                </div>
+              </div>
+
+              {/* Team Information */}
+              <div className="space-y-3">
+                <h4 className="text-[10px] font-black uppercase tracking-wider text-zinc-400">
+                  Team Members Info
+                </h4>
+                
+                <div className="bg-white border border-zinc-300 p-4 space-y-3 shadow-sm">
+                  <div>
+                    <span className="text-[9px] font-extrabold uppercase tracking-widest text-zinc-400 block">
+                      Team Leader
+                    </span>
+                    <span className="text-xs font-bold text-zinc-800 block mt-0.5">
+                      {selectedTeam.teamLeadName}
+                    </span>
+                    <span className="text-[10px] text-zinc-500 font-semibold block">
+                      {selectedTeam.email}
+                    </span>
+                  </div>
+
+                  {selectedTeam.members && selectedTeam.members.length > 0 ? (
+                    <div className="border-t border-zinc-150 pt-3">
+                      <span className="text-[9px] font-extrabold uppercase tracking-widest text-zinc-400 block mb-1.5">
+                        Team Members ({selectedTeam.members.length})
+                      </span>
+                      <div className="space-y-2">
+                        {selectedTeam.members.map((member) => (
+                          <div key={member.id} className="flex justify-between items-center text-xs bg-zinc-50 border border-zinc-200/60 p-2">
+                            <span className="font-semibold text-zinc-800">{member.fullName}</span>
+                            <span className="text-[10px] text-zinc-500 font-mono">{member.email}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="border-t border-zinc-150 pt-3">
+                      <span className="text-[10px] text-zinc-400 font-bold italic">
+                        Solo Participant (Lead only)
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Project Deliverable Section */}
+              <div className="space-y-3">
+                <h4 className="text-[10px] font-black uppercase tracking-wider text-zinc-400">
+                  Project Deliverable
+                </h4>
+                
+                {selectedTeamSubmission ? (
+                  <div className="bg-white border border-zinc-300 border-l-4 border-l-emerald-550 p-4 space-y-4 shadow-sm">
+                    <div>
+                      <h5 className="text-xs font-extrabold text-zinc-800">
+                        {selectedTeamSubmission.projectName || "Project Submitted"}
+                      </h5>
+                      {selectedTeamSubmission.description && (
+                        <p className="text-xs text-zinc-500 mt-1.5 leading-relaxed">
+                          {selectedTeamSubmission.description}
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="flex flex-wrap gap-2 border-t border-zinc-100 pt-3">
+                      <a 
+                        href={selectedTeamSubmission.githubUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-1.5 bg-zinc-900 hover:bg-zinc-800 text-white font-bold text-[10px] px-3 py-2 transition-colors cursor-pointer"
+                      >
+                        <GitBranch className="w-3.5 h-3.5" /> GitHub Repo
+                      </a>
+                      {selectedTeamSubmission.liveUrl && (
+                        <a 
+                          href={selectedTeamSubmission.liveUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-1.5 bg-zinc-105 border border-zinc-300 hover:bg-zinc-200 text-zinc-800 font-bold text-[10px] px-3 py-2 transition-colors cursor-pointer"
+                        >
+                          <Globe className="w-3.5 h-3.5 text-zinc-500" /> Live Demo
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="bg-zinc-50 border border-dashed border-zinc-300 p-6 text-center">
+                    <p className="text-xs font-extrabold text-zinc-400">
+                      No project deliverables submitted yet.
+                    </p>
+                    <p className="text-[10px] text-zinc-400 mt-1 leading-snug">
+                      Ask the team to submit their project code/slides on their dashboard.
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }
