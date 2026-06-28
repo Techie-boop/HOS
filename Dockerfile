@@ -21,6 +21,7 @@ COPY . .
 RUN npx prisma generate
 
 ENV NEXT_TELEMETRY_DISABLED=1
+ENV STANDALONE=1
 RUN npm run build
 
 # 4. Runner stage - Production-ready lightweight runner
