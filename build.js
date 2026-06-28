@@ -1,4 +1,13 @@
 const { execSync } = require('child_process');
+const fs = require('fs');
+
+console.log("Cleaning previous build artifacts...");
+try {
+  fs.rmSync('.open-next', { recursive: true, force: true });
+  console.log("Successfully cleaned .open-next directory");
+} catch (err) {
+  console.error("Failed to clean .open-next directory:", err);
+}
 
 console.log("Detecting build environment...");
 console.log("CF_PAGES:", process.env.CF_PAGES);

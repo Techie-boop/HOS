@@ -12,8 +12,5 @@
   },
   "observability": {
     "enabled": true
-  },
-  "build": {
-    "command": "npx prisma generate && npx opennextjs-cloudflare build"
   }
 }
