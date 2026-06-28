@@ -248,3 +248,34 @@ export async function getCurrentUserAction() {
     avatarUrl: team.user.avatarUrl,
   };
 }
+
+export async function fetchTopNavbarCountsAction() {
+  const team = await getSessionTeam();
+  if (!team) {
+    return { messages: 0, jury: 0, roast: 0 };
+  }
+
+  const messageCount = await prisma.message.count({
+    where: {
+      hackathonId: team.hackathonId,
+    },
+  });
+
+  const juryCount = await prisma.juryRequest.count({
+    where: {
+      teamId: team.id,
+    },
+  });
+
+  const roastCount = await prisma.projectRoast.count({
+    where: {
+      teamId: team.id,
+    },
+  });
+
+  return {
+    messages: messageCount,
+    jury: juryCount,
+    roast: roastCount,
+  };
+}

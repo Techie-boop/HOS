@@ -1,24 +1,26 @@
 import { getSessionTeam } from "../../../../lib/auth";
 import { redirect } from "next/navigation";
-import { FolderOpen } from "lucide-react";
 
 export default async function TeamResourcesPage() {
   const team = await getSessionTeam();
   if (!team) redirect("/team/login");
 
   return (
-    <main className="flex-grow p-6 md:p-8 max-w-[1400px] w-full space-y-6 animate-in fade-in duration-200">
-      <div>
-        <h2 className="text-2xl font-bold text-zinc-900">Developer Resources</h2>
-        <p className="text-sm text-zinc-500">APIs, boilerplates, UI kits, and hardware tracks reference docs</p>
-      </div>
-
-      <div className="bg-white border border-zinc-200 rounded-lg p-12 text-center shadow-sm space-y-4 max-w-xl mx-auto mt-8">
-        <FolderOpen className="w-10 h-10 text-zinc-300 mx-auto" />
-        <h3 className="text-base font-bold text-zinc-800">Resource Repository Loading</h3>
-        <p className="text-xs text-zinc-400 font-normal leading-relaxed">
-          Our developer repository is being finalized. Soon, you will have access to boilerplate Github repos, design kits, API credentials, and sponsor-specific guidelines for the hackathon tracks.
-        </p>
+    <main className="flex-grow p-6 md:p-8 max-w-[1400px] w-full flex flex-col items-center justify-center min-h-[70vh] animate-in fade-in duration-200">
+      <div className="flex flex-col items-center max-w-md w-full">
+         <img
+          src="https://cdni.iconscout.com/illustration/premium/thumb/unable-loading-illustration-svg-download-png-8257059.png"
+          alt="Super admin Module not configured yet"
+          className="w-64 h-64 object-contain mb-6 select-none pointer-events-none"
+        />
+        <div className="w-full bg-red-55 border border-red-200 text-red-700 p-4 rounded-none text-center">
+          <p className="text-xs font-black tracking-wide uppercase mb-1">
+            Super admin Module not configured yet
+          </p>
+          <p className="text-[10px] text-red-600 font-semibold leading-relaxed">
+            The requested system module has not been deployed on the current active cluster. Please contact support.
+          </p>
+        </div>
       </div>
     </main>
   );
