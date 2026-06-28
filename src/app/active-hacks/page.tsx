@@ -2,6 +2,8 @@ import { prisma } from "../../lib/db";
 import Link from "next/link";
 import HackathonPublicCard from "./HackathonPublicCard";
 
+export const dynamic = "force-dynamic";
+
 export default async function ActiveHacksPage() {
   // Query all hackathons
   const hackathons = await prisma.hackathon.findMany({
