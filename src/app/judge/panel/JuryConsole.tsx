@@ -381,34 +381,49 @@ export default function JuryConsole({
                 {localTeams.map((team, idx) => {
                   const isGraded = team.score > 0;
                   const isSelected = selectedTeam?.id === team.id;
+                  
+                  // Soft color palettes for the cards
+                  const colorPalettes = [
+                    { bg: "bg-blue-50/40 hover:bg-blue-50/70", border: "border-blue-100 hover:border-blue-300", text: "text-blue-650", badge: "bg-blue-100/60 text-blue-700 border border-blue-200/60" },
+                    { bg: "bg-purple-50/40 hover:bg-purple-50/70", border: "border-purple-100 hover:border-purple-300", text: "text-purple-650", badge: "bg-purple-100/60 text-purple-700 border border-purple-200/60" },
+                    { bg: "bg-amber-50/40 hover:bg-amber-50/70", border: "border-amber-100 hover:border-amber-300", text: "text-amber-650", badge: "bg-amber-100/60 text-amber-700 border border-amber-200/60" },
+                    { bg: "bg-pink-50/40 hover:bg-pink-50/70", border: "border-pink-100 hover:border-pink-300", text: "text-pink-650", badge: "bg-pink-100/60 text-pink-700 border border-pink-200/60" },
+                    { bg: "bg-indigo-50/40 hover:bg-indigo-50/70", border: "border-indigo-100 hover:border-indigo-300", text: "text-indigo-650", badge: "bg-indigo-100/60 text-indigo-700 border border-indigo-200/60" },
+                    { bg: "bg-rose-50/40 hover:bg-rose-50/70", border: "border-rose-100 hover:border-rose-300", text: "text-rose-650", badge: "bg-rose-100/60 text-rose-700 border border-rose-200/60" },
+                    { bg: "bg-cyan-50/40 hover:bg-cyan-50/70", border: "border-cyan-100 hover:border-cyan-300", text: "text-cyan-650", badge: "bg-cyan-100/60 text-cyan-700 border border-cyan-200/60" },
+                    { bg: "bg-teal-50/40 hover:bg-teal-50/70", border: "border-teal-100 hover:border-teal-300", text: "text-teal-650", badge: "bg-teal-100/60 text-teal-700 border border-teal-200/60" },
+                  ];
+
+                  const palette = colorPalettes[idx % colorPalettes.length];
+
                   return (
                     <button
                       key={team.id}
                       onClick={() => setSelectedTeam(team)}
-                      className={`flex flex-col items-center justify-between p-5 bg-white border rounded-none shadow-sm cursor-pointer transition-all duration-150 hover:-translate-y-0.5 group text-center min-h-[180px] ${
+                      className={`flex flex-col items-center justify-between p-4 border rounded-xl shadow-xs cursor-pointer transition-all duration-150 hover:-translate-y-0.5 group text-center min-h-[142px] ${palette.bg} ${palette.border} ${
                         isSelected 
-                          ? "border-[#E61E32] ring-2 ring-[#E61E32]/10" 
-                          : "border-zinc-300 hover:border-zinc-450 hover:shadow-md"
+                          ? "ring-2 ring-[#E61E32] border-[#E61E32] bg-white shadow-sm" 
+                          : "hover:shadow-sm"
                       }`}
                     >
                       <div className="flex flex-col items-center w-full">
-                        <span className="text-[9px] font-extrabold uppercase tracking-widest text-zinc-400 group-hover:text-zinc-500">
+                        <span className="text-[8px] font-black uppercase tracking-widest text-zinc-400 group-hover:text-zinc-500">
                           Team
                         </span>
-                        <span className="text-5xl font-black text-zinc-800 my-3 group-hover:scale-105 transition-transform duration-150">
+                        <span className={`text-3xl font-black my-1.5 group-hover:scale-105 transition-transform duration-150 ${palette.text}`}>
                           {idx + 1}
                         </span>
-                        <span className="text-xs font-bold text-zinc-700 truncate w-full px-1" title={team.teamName}>
+                        <span className="text-[11px] font-bold text-zinc-750 truncate w-full px-1" title={team.teamName}>
                           {team.teamName}
                         </span>
                       </div>
                       
                       {isGraded ? (
-                        <span className="mt-3 text-[9px] font-black uppercase tracking-widest px-2 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200">
+                        <span className="mt-2 text-[8px] font-black uppercase tracking-widest px-2 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-250 rounded-md">
                           {team.score} Pts
                         </span>
                       ) : (
-                        <span className="mt-3 text-[9px] font-black uppercase tracking-widest px-2 py-0.5 bg-zinc-50 text-zinc-400 border border-zinc-200">
+                        <span className={`mt-2 text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md ${palette.badge}`}>
                           Pending
                         </span>
                       )}
