@@ -216,3 +216,35 @@ export async function fetchRoastsAction() {
     },
   });
 }
+
+export async function fetchChannelMessageCountsAction() {
+  const team = await getSessionTeam();
+  if (!team) {
+    throw new Error("Unauthorized: Team session not found.");
+  }
+
+  const counts = await prisma.message.groupBy({
+    by: ["channelId"],
+    where: {
+      hackathonId: team.hackathonId,
+    },
+    _count: {
+      id: true,
+    },
+  });
+
+  return counts.map((c) => ({
+    channelId: c.channelId,
+    count: c._count.id,
+  }));
+}
+
+export async function getCurrentUserAction() {
+  const team = await getSessionTeam();
+  if (!team) return null;
+  return {
+    fullName: team.user.fullName,
+    email: team.user.email,
+    avatarUrl: team.user.avatarUrl,
+  };
+}

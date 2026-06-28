@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Send, Hash, Users, Sparkles, MessageSquare, Loader2 } from "lucide-react";
-import { fetchMessagesAction, sendMessageAction } from "../../../actions/team-feature-actions";
+import { fetchMessagesAction, sendMessageAction, fetchChannelMessageCountsAction, getCurrentUserAction } from "../../../actions/team-feature-actions";
 
 interface Message {
   id: string;
@@ -19,11 +19,59 @@ interface Channel {
   description: string;
 }
 
+const getNameColor = (name: string) => {
+  const colors = [
+    "text-blue-600",
+    "text-purple-650",
+    "text-pink-650",
+    "text-indigo-600",
+    "text-amber-600",
+    "text-teal-600",
+    "text-emerald-600",
+    "text-rose-600"
+  ];
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const index = Math.abs(hash) % colors.length;
+  return colors[index];
+};
+
+const getBubbleColors = (name: string, isMe: boolean) => {
+  if (isMe) {
+    return {
+      bg: "bg-indigo-50",
+      border: "border-indigo-300",
+      senderText: "text-indigo-700"
+    };
+  }
+  
+  const themes = [
+    { bg: "bg-sky-50", border: "border-sky-350", senderText: "text-sky-700" },
+    { bg: "bg-purple-50", border: "border-purple-300", senderText: "text-purple-700" },
+    { bg: "bg-pink-55", border: "border-pink-300", senderText: "text-pink-700" },
+    { bg: "bg-amber-55", border: "border-amber-300", senderText: "text-amber-700" },
+    { bg: "bg-teal-55", border: "border-teal-300", senderText: "text-teal-700" },
+    { bg: "bg-rose-55", border: "border-rose-300", senderText: "text-rose-700" },
+    { bg: "bg-blue-50", border: "border-blue-300", senderText: "text-blue-700" }
+  ];
+  
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const index = Math.abs(hash) % themes.length;
+  return themes[index];
+};
+
 export default function TeamMessagesPage() {
   const [activeChannel, setActiveChannel] = useState("general");
   const [inputText, setInputText] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [channelCounts, setChannelCounts] = useState<Record<string, number>>({});
+  const [currentUser, setCurrentUser] = useState<{ fullName: string; email: string; avatarUrl: string | null } | null>(null);
 
   const channels: Channel[] = [
     { id: "general", name: "general-chat", description: "All-purpose chat for teammates to sync up" },
@@ -54,13 +102,41 @@ export default function TeamMessagesPage() {
     }
   };
 
-  // Reload messages when active channel changes
+  // Fetch channel message counts
+  const loadChannelCounts = async () => {
+    try {
+      const data = await fetchChannelMessageCountsAction();
+      const countMap: Record<string, number> = {};
+      data.forEach((c) => {
+        countMap[c.channelId] = c.count;
+      });
+      setChannelCounts(countMap);
+    } catch (err) {
+      console.error("Error loading message counts:", err);
+    }
+  };
+
+  // Setup real-time-like sync on mount / channel active change
   useEffect(() => {
-    loadMessages(activeChannel, true);
+    const init = async () => {
+      setIsLoading(true);
+      try {
+        const user = await getCurrentUserAction();
+        setCurrentUser(user);
+        await loadMessages(activeChannel, false);
+        await loadChannelCounts();
+      } catch (err) {
+        console.error("Failed to initialize messages panel:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    init();
 
     // Setup real-time-like polling every 3 seconds
     const interval = setInterval(() => {
       loadMessages(activeChannel, false);
+      loadChannelCounts();
     }, 3000);
 
     return () => clearInterval(interval);
@@ -86,6 +162,10 @@ export default function TeamMessagesPage() {
           createdAt: new Date(newMsg.createdAt),
         },
       ]);
+      setChannelCounts((prev) => ({
+        ...prev,
+        [activeChannel]: (prev[activeChannel] || 0) + 1,
+      }));
     } catch (err) {
       console.error("Failed to send message:", err);
       alert("Failed to send message. Please try again.");
@@ -104,9 +184,6 @@ export default function TeamMessagesPage() {
             <MessageSquare className="w-4 h-4 text-[#E61E32]" />
             <h3 className="text-sm font-bold text-zinc-800 tracking-tight">Channels</h3>
           </div>
-          <span className="text-[10px] bg-red-50 text-[#E61E32] font-extrabold px-1.5 py-0.5 rounded tracking-wide uppercase animate-pulse">
-            Live Database
-          </span>
         </div>
         
         <nav className="flex-1 p-2.5 space-y-1 overflow-y-auto">
@@ -122,6 +199,15 @@ export default function TeamMessagesPage() {
             >
               <Hash className={`w-3.5 h-3.5 shrink-0 ${activeChannel === chan.id ? "text-[#E61E32]" : "text-zinc-400"}`} />
               <span className="truncate">{chan.name}</span>
+              
+              {/* Message count badge */}
+              <span className={`ml-auto w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-black border transition-all ${
+                activeChannel === chan.id
+                  ? "bg-[#E61E32] text-white border-[#E61E32]"
+                  : "bg-zinc-100 text-zinc-550 border-zinc-200"
+              }`}>
+                {channelCounts[chan.id] || 0}
+              </span>
             </button>
           ))}
         </nav>
@@ -161,37 +247,80 @@ export default function TeamMessagesPage() {
               <span className="text-xs text-zinc-400 font-bold mt-2">Connecting to database...</span>
             </div>
           ) : messages.length > 0 ? (
-            messages.map((msg) => (
-              <div key={msg.id} className="flex gap-3 items-start animate-in fade-in duration-200">
-                <div className="w-8 h-8 rounded-full overflow-hidden border border-zinc-300 shrink-0 select-none flex items-center justify-center bg-zinc-200">
-                  {msg.senderAvatar && (msg.senderAvatar.startsWith("http") || msg.senderAvatar.startsWith("/")) ? (
-                    <img
-                      src={msg.senderAvatar}
-                      alt={msg.senderName}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <span className="font-bold text-xs text-zinc-700">
-                      {msg.senderAvatar || msg.senderName.split(" ").map(n => n[0]).join("").toUpperCase()}
+            messages.map((msg) => {
+              const isSystem = msg.senderName === "System";
+              const isMe = msg.senderName === currentUser?.fullName || msg.senderName === "You";
+
+              if (isSystem) {
+                return (
+                  <div key={msg.id} className="flex justify-center w-full my-2 animate-in fade-in duration-200">
+                    <span className="bg-zinc-100 border border-zinc-200 text-zinc-555 text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider">
+                      ⚙️ {msg.content}
                     </span>
-                  )}
-                </div>
-                <div className="space-y-0.5 min-w-0">
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-xs font-bold text-zinc-800">{msg.senderName}</span>
-                    <span className="text-[9px] bg-zinc-150 text-zinc-650 px-1 py-0 rounded font-bold uppercase tracking-wider scale-90 origin-left">
-                      {msg.senderRole}
-                    </span>
-                    <span className="text-[10px] text-zinc-400 font-normal">
+                  </div>
+                );
+              }
+
+              const bubbleTheme = getBubbleColors(msg.senderName, isMe);
+
+              if (isMe) {
+                return (
+                  <div key={msg.id} className="flex justify-end w-full pl-12 animate-in fade-in duration-200">
+                    <div className={`${bubbleTheme.bg} border ${bubbleTheme.border} rounded-2xl rounded-tr-none px-3.5 py-2 max-w-[75%] shadow-sm relative`}>
+                      <div className="flex items-baseline gap-2 mb-1.5 border-b border-zinc-200/40 pb-0.5">
+                        <span className={`text-[10px] font-black uppercase tracking-wider ${bubbleTheme.senderText}`}>
+                          {msg.senderName} (You)
+                        </span>
+                        <span className="text-[8px] bg-zinc-200/50 text-zinc-650 px-1.5 py-0.2 rounded font-bold uppercase tracking-wider scale-95 origin-left">
+                          {msg.senderRole}
+                        </span>
+                      </div>
+                      <p className="text-xs text-zinc-800 leading-relaxed font-semibold break-words">
+                        {msg.content}
+                      </p>
+                      <span className="text-[9px] text-zinc-450 block text-right mt-1 font-bold">
+                        {msg.createdAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                    </div>
+                  </div>
+                );
+              }
+
+              return (
+                <div key={msg.id} className="flex justify-start w-full pr-12 gap-3 items-start animate-in fade-in duration-200">
+                  <div className="w-8 h-8 rounded-full overflow-hidden border border-zinc-300 shrink-0 select-none flex items-center justify-center bg-zinc-200">
+                    {msg.senderAvatar && (msg.senderAvatar.startsWith("http") || msg.senderAvatar.startsWith("/")) ? (
+                      <img
+                        src={msg.senderAvatar}
+                        alt={msg.senderName}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <span className="font-bold text-xs text-zinc-700">
+                        {msg.senderAvatar || msg.senderName.split(" ").map(n => n[0]).join("").toUpperCase()}
+                      </span>
+                    )}
+                  </div>
+                  
+                  <div className={`${bubbleTheme.bg} border ${bubbleTheme.border} rounded-2xl rounded-tl-none px-3.5 py-2 max-w-[75%] shadow-sm relative`}>
+                    <div className="flex items-baseline gap-2 mb-1.5 border-b border-zinc-200/40 pb-0.5">
+                      <span className={`text-[10px] font-black uppercase tracking-wider ${bubbleTheme.senderText}`}>
+                        {msg.senderName}
+                      </span>
+                      <span className="text-[8px] bg-zinc-200/50 text-zinc-650 px-1.5 py-0.2 rounded font-bold uppercase tracking-wider scale-95 origin-left">
+                        {msg.senderRole}
+                      </span>
+                    </div>
+                    <p className="text-xs text-zinc-700 leading-relaxed font-semibold break-words">
+                      {msg.content}
+                    </p>
+                    <span className="text-[9px] text-zinc-455 block text-right mt-1 font-bold">
                       {msg.createdAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </span>
                   </div>
-                  <p className="text-xs text-zinc-650 leading-relaxed break-words pr-4">
-                    {msg.content}
-                  </p>
                 </div>
-              </div>
-            ))
+              );
+            })
           ) : (
             <div className="h-full flex flex-col items-center justify-center text-center p-6">
               <img
@@ -212,11 +341,11 @@ export default function TeamMessagesPage() {
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
             placeholder={`Message #${currentChannel?.name}...`}
-            className="flex-1 bg-zinc-50 hover:bg-zinc-100/60 border border-zinc-200 focus:bg-white focus:outline-none focus:border-[#E61E32] text-xs px-4 py-2.5 rounded-none font-semibold transition-all shadow-inner"
+            className="flex-1 bg-zinc-50 hover:bg-zinc-100/60 border border-zinc-200 focus:bg-white focus:outline-none focus:border-[#c91527] text-xs px-4 py-2.5 rounded-none font-semibold transition-all shadow-inner"
           />
           <button
             type="submit"
-            className="bg-[#E61E32] hover:bg-[#c91527] text-white p-2.5 rounded-none flex items-center justify-center shadow-sm transition-all cursor-pointer"
+            className="bg-[#c91527] hover:bg-[#a8101e] border border-[#a8101e] text-white p-2.5 rounded-none flex items-center justify-center shadow-sm transition-all cursor-pointer"
             title="Send Message"
           >
             <Send className="w-4 h-4" />
