@@ -15,7 +15,7 @@ export default async function TeamInvitePage() {
   // Get active host to build absolute invite URL dynamically
   const headersList = await headers();
   const host = headersList.get("host") || "localhost:3000";
-  const protocol = host.startsWith("localhost") ? "http" : "https";
+  const protocol = headersList.get("x-forwarded-proto") || (host.startsWith("localhost") ? "http" : "https");
   const inviteUrl = `${protocol}://${host}/team/join?code=${team.joinCode}`;
 
   return (
