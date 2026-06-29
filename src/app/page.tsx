@@ -25,7 +25,7 @@ export default async function Home() {
       textColor: "#ffffff",
       links: [
         { label: "Active Hacks", href: "/active-hacks", ariaLabel: "Explore Active Hackathons" },
-        { label: `Platform Status: ${isDbHealthy ? "Operational" : "Degraded"}`, href: "/status", ariaLabel: "Platform Status" }
+        { label: "HOS Status", href: "/status", ariaLabel: "Platform Status" }
       ]
     },
     {
