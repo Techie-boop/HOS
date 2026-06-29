@@ -5,8 +5,13 @@ import HackathonPublicCard from "./HackathonPublicCard";
 export const dynamic = "force-dynamic";
 
 export default async function ActiveHacksPage() {
-  // Query all hackathons
+  // Query all non-draft hackathons
   const hackathons = await prisma.hackathon.findMany({
+    where: {
+      status: {
+        in: ["Active", "Completed"],
+      },
+    },
     orderBy: {
       createdAt: "desc",
     },

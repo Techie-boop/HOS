@@ -27,7 +27,7 @@ export default async function PublicHackathonDetailPage({ params }: PublicDetail
     },
   });
 
-  if (!hackathon) {
+  if (!hackathon || hackathon.status === "Draft") {
     notFound();
   }
 

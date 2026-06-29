@@ -2,6 +2,7 @@
 
 import { prisma } from "../../lib/db";
 import { revalidatePath } from "next/cache";
+import { getSessionUser } from "../../lib/auth";
 
 export async function registerParticipantAction(data: {
   hackathonId: string;
@@ -92,6 +93,21 @@ export async function registerParticipantAction(data: {
 
 export async function updateRegistrationStatusAction(registrationId: string, status: "Verified" | "Rejected") {
   try {
+    const user = await getSessionUser();
+    if (!user) {
+      return { success: false, error: "Unauthorized." };
+    }
+
+    // Verify registration's hackathon belongs to the logged-in organizer
+    const registration = await prisma.registration.findUnique({
+      where: { id: registrationId },
+      include: { hackathon: true },
+    });
+
+    if (!registration || registration.hackathon.organizerId !== user.id) {
+      return { success: false, error: "Unauthorized: Access denied." };
+    }
+
     const updated = await prisma.registration.update({
       where: { id: registrationId },
       data: { paymentStatus: status },

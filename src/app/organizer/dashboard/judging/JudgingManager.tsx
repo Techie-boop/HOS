@@ -33,6 +33,7 @@ interface Judge {
   imageUrl: string | null;
   loginCode: string | null;
   loginCodeExpiresAt: Date | null;
+  hackathonId: string;
   hackathon: {
     title: string;
   };
@@ -41,6 +42,7 @@ interface Judge {
 interface Guideline {
   id: string;
   content: string;
+  hackathonId: string;
   hackathon: {
     title: string;
   };
@@ -58,6 +60,9 @@ export default function JudgingManager({
   initialGuidelines,
 }: JudgingManagerProps) {
   const [selectedHackathonId, setSelectedHackathonId] = useState(hackathons[0]?.id || "");
+  
+  const filteredJudges = initialJudges.filter((jd) => jd.hackathonId === selectedHackathonId);
+  const filteredGuidelines = initialGuidelines.filter((g) => g.hackathonId === selectedHackathonId);
   
   // Judge Form State
   const [judgeName, setJudgeName] = useState("");
@@ -263,9 +268,9 @@ export default function JudgingManager({
         <div className="space-y-3">
           <h3 className="font-bold text-zinc-550 text-xs uppercase tracking-wider">Configured Juries</h3>
           
-          {initialJudges.length > 0 ? (
+          {filteredJudges.length > 0 ? (
             <div className="grid grid-cols-1 gap-4">
-              {initialJudges.map((jd) => (
+              {filteredJudges.map((jd) => (
                 <div
                   key={jd.id}
                   className="bg-white border border-zinc-300 border-l-4 border-l-[#E61E32] rounded-none p-4 shadow-sm flex flex-col justify-between relative group transition-all duration-200 hover:border-zinc-400"
@@ -311,7 +316,7 @@ export default function JudgingManager({
           ) : (
             <div className="bg-white border border-dashed border-zinc-300 rounded-none p-10 text-center text-zinc-400 shadow-sm">
               <User className="w-8 h-8 text-zinc-300 mx-auto mb-2" />
-              <p className="text-xs font-semibold">No juries configured yet</p>
+              <p className="text-xs font-semibold">No juries configured yet for this hackathon</p>
             </div>
           )}
         </div>
@@ -320,43 +325,33 @@ export default function JudgingManager({
         <div className="space-y-3">
           <h3 className="font-bold text-zinc-550 text-xs uppercase tracking-wider">Judging Guidelines</h3>
 
-          {initialGuidelines.length > 0 ? (
-            <div className="space-y-4">
-              {/* Group guidelines by hackathon */}
-              {Array.from(new Set(initialGuidelines.map((g) => g.hackathon.title))).map((hackTitle) => (
-                <div key={hackTitle} className="bg-white border border-zinc-300 rounded-none p-5 shadow-sm space-y-3">
-                  <h4 className="text-xs font-extrabold uppercase text-[#E61E32] tracking-wider border-b border-zinc-200 pb-2">
-                    {hackTitle}
-                  </h4>
-                  <ul className="space-y-2">
-                    {initialGuidelines
-                      .filter((g) => g.hackathon.title === hackTitle)
-                      .map((g) => (
-                        <li
-                          key={g.id}
-                          className="flex items-start justify-between gap-4 text-xs font-semibold text-zinc-650 bg-zinc-50 p-2.5 rounded-none border border-zinc-200/60 group relative"
-                        >
-                          <div className="flex gap-2">
-                            <Shield className="w-4 h-4 text-zinc-400 shrink-0 mt-0.5" />
-                            <span className="leading-relaxed font-normal text-zinc-600">{g.content}</span>
-                          </div>
-                          <button
-                            onClick={() => handleDeleteGuideline(g.id)}
-                            className="p-1 rounded-none border border-transparent hover:border-zinc-200 hover:bg-zinc-100 text-zinc-400 hover:text-red-500 cursor-pointer transition-colors shrink-0"
-                            title="Remove guideline line"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </li>
-                      ))}
-                  </ul>
-                </div>
-              ))}
+          {filteredGuidelines.length > 0 ? (
+            <div className="bg-white border border-zinc-300 rounded-none p-5 shadow-sm space-y-3">
+              <ul className="space-y-2">
+                {filteredGuidelines.map((g) => (
+                  <li
+                    key={g.id}
+                    className="flex items-start justify-between gap-4 text-xs font-semibold text-zinc-650 bg-zinc-50 p-2.5 rounded-none border border-zinc-200/60 group relative"
+                  >
+                    <div className="flex gap-2">
+                      <Shield className="w-4 h-4 text-zinc-400 shrink-0 mt-0.5" />
+                      <span className="leading-relaxed font-normal text-zinc-600">{g.content}</span>
+                    </div>
+                    <button
+                      onClick={() => handleDeleteGuideline(g.id)}
+                      className="p-1 rounded-none border border-transparent hover:border-zinc-200 hover:bg-zinc-100 text-zinc-400 hover:text-red-500 cursor-pointer transition-colors shrink-0"
+                      title="Remove guideline line"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </li>
+                ))}
+              </ul>
             </div>
           ) : (
             <div className="bg-white border border-dashed border-zinc-300 rounded-none p-10 text-center text-zinc-400 shadow-sm">
               <Shield className="w-8 h-8 text-zinc-300 mx-auto mb-2" />
-              <p className="text-xs font-semibold">No guidelines defined yet</p>
+              <p className="text-xs font-semibold">No guidelines defined yet for this hackathon</p>
             </div>
           )}
         </div>

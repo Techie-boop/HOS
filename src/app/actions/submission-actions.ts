@@ -2,6 +2,7 @@
 
 import { prisma } from "../../lib/db";
 import { revalidatePath } from "next/cache";
+import { getSessionTeam, getSessionUser, getSessionJudge } from "../../lib/auth";
 
 export async function submitProject(formData: FormData) {
   const teamId = formData.get("teamId") as string;
@@ -12,6 +13,11 @@ export async function submitProject(formData: FormData) {
   const description = (formData.get("description") as string | null)?.trim() || null;
 
   if (!githubUrl) throw new Error("GitHub URL is required.");
+
+  const team = await getSessionTeam();
+  if (!team || team.id !== teamId || team.hackathonId !== hackathonId) {
+    throw new Error("Unauthorized");
+  }
 
   await prisma.projectSubmission.upsert({
     where: { teamId },
@@ -24,13 +30,58 @@ export async function submitProject(formData: FormData) {
 }
 
 export async function getSubmissionByTeam(teamId: string) {
-  return prisma.projectSubmission.findUnique({ where: { teamId } });
+  const team = await getSessionTeam();
+  const organizer = await getSessionUser();
+  const judge = await getSessionJudge();
+
+  if (team && team.id === teamId) {
+    return prisma.projectSubmission.findUnique({ where: { teamId } });
+  }
+
+  if (organizer) {
+    const targetTeam = await prisma.team.findUnique({
+      where: { id: teamId },
+      include: { hackathon: true }
+    });
+    if (targetTeam && targetTeam.hackathon.organizerId === organizer.id) {
+      return prisma.projectSubmission.findUnique({ where: { teamId } });
+    }
+  }
+
+  if (judge) {
+    const targetTeam = await prisma.team.findUnique({
+      where: { id: teamId }
+    });
+    if (targetTeam && targetTeam.hackathonId === judge.hackathonId) {
+      return prisma.projectSubmission.findUnique({ where: { teamId } });
+    }
+  }
+
+  throw new Error("Unauthorized");
 }
 
 export async function getAllSubmissions(hackathonId: string) {
-  return prisma.projectSubmission.findMany({
-    where: { hackathonId },
-    include: { team: { select: { teamName: true, teamLeadName: true, email: true } } },
-    orderBy: { submittedAt: "desc" },
-  });
+  const organizer = await getSessionUser();
+  const judge = await getSessionJudge();
+
+  if (organizer) {
+    const hackathon = await prisma.hackathon.findUnique({ where: { id: hackathonId } });
+    if (hackathon && hackathon.organizerId === organizer.id) {
+      return prisma.projectSubmission.findMany({
+        where: { hackathonId },
+        include: { team: { select: { teamName: true, teamLeadName: true, email: true } } },
+        orderBy: { submittedAt: "desc" },
+      });
+    }
+  }
+
+  if (judge && judge.hackathonId === hackathonId) {
+    return prisma.projectSubmission.findMany({
+      where: { hackathonId },
+      include: { team: { select: { teamName: true, teamLeadName: true, email: true } } },
+      orderBy: { submittedAt: "desc" },
+    });
+  }
+
+  throw new Error("Unauthorized");
 }

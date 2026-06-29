@@ -2,6 +2,7 @@
 
 import { prisma } from "../../lib/db";
 import { revalidatePath } from "next/cache";
+import { getSessionTeam } from "../../lib/auth";
 
 export async function createTaskAction(
   teamId: string,
@@ -11,6 +12,11 @@ export async function createTaskAction(
   assigneeName: string,
   assigneeRole: string
 ) {
+  const sessionTeam = await getSessionTeam();
+  if (!sessionTeam || sessionTeam.id !== teamId) {
+    throw new Error("Unauthorized");
+  }
+
   await prisma.task.create({
     data: {
       teamId,
@@ -40,11 +46,16 @@ export async function moveTaskAction(
   completedByName: string | null,
   completedByRole: string | null
 ) {
+  const sessionTeam = await getSessionTeam();
+  if (!sessionTeam || sessionTeam.id !== teamId) {
+    throw new Error("Unauthorized");
+  }
+
   const task = await prisma.task.findUnique({
     where: { id: taskId },
   });
 
-  if (!task) return;
+  if (!task || task.teamId !== teamId) return;
 
   const completedData = {
     completedById: targetStatus === "COMPLETED" ? task.assigneeId : null,
@@ -81,6 +92,19 @@ export async function moveTaskAction(
 }
 
 export async function deleteTaskAction(teamId: string, taskId: string, title: string) {
+  const sessionTeam = await getSessionTeam();
+  if (!sessionTeam || sessionTeam.id !== teamId) {
+    throw new Error("Unauthorized");
+  }
+
+  const task = await prisma.task.findUnique({
+    where: { id: taskId },
+  });
+
+  if (!task || task.teamId !== teamId) {
+    throw new Error("Unauthorized");
+  }
+
   await prisma.task.delete({
     where: { id: taskId },
   });

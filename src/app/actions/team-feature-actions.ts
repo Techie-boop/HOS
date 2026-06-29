@@ -76,6 +76,15 @@ export async function requestJuryConsultationAction(
     throw new Error("Unauthorized: Team session not found.");
   }
 
+  // Verify that the judge belongs to the team's hackathon
+  const judge = await prisma.judge.findUnique({
+    where: { id: judgeId },
+  });
+
+  if (!judge || judge.hackathonId !== team.hackathonId) {
+    throw new Error("Unauthorized: Judge is not part of this hackathon.");
+  }
+
   const request = await prisma.juryRequest.create({
     data: {
       type,

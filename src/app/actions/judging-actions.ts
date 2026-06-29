@@ -145,7 +145,27 @@ export async function generateJudgeAccessCode(judgeId: string) {
     }
 
     // Generate unique 6-digit access code
-    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    let code = "";
+    let isUnique = false;
+    let attempts = 0;
+    const now = new Date();
+
+    while (!isUnique && attempts < 100) {
+      code = Math.floor(100000 + Math.random() * 900000).toString();
+      const existingActiveJudge = await prisma.judge.findFirst({
+        where: {
+          loginCode: code,
+          loginCodeExpiresAt: {
+            gte: now,
+          },
+        },
+      });
+      if (!existingActiveJudge) {
+        isUnique = true;
+      }
+      attempts++;
+    }
+
     const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes expiration
 
     await prisma.judge.update({
