@@ -118,6 +118,7 @@ function LoginFormContent() {
           onSubmit={handleSubmit}
           noValidate
         >
+          <input type="hidden" name="hackathonId" value={hackathonId || ""} />
           <div>
             <label htmlFor="email" className="block text-xs font-semibold text-zinc-600 uppercase tracking-wider mb-2">
               Team Email Address

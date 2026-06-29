@@ -82,6 +82,7 @@ export async function teamSignUpAction(prevState: any, formData: FormData) {
 export async function teamSignInAction(prevState: any, formData: FormData) {
   const email = formData.get("email") as string;
   const password = formData.get("password") as string;
+  const hackathonId = formData.get("hackathonId") as string;
 
   if (!email || !password) {
     return { success: false, error: "Please enter your email and password." };
@@ -94,6 +95,9 @@ export async function teamSignInAction(prevState: any, formData: FormData) {
     });
 
     if (team) {
+      if (hackathonId && team.hackathonId !== hackathonId) {
+        return { success: false, error: "Credentials not registered for this hackathon." };
+      }
       const isValid = verifyPassword(password, team.passwordHash);
       if (isValid) {
         await setTeamSessionCookie(team.id);
@@ -104,9 +108,15 @@ export async function teamSignInAction(prevState: any, formData: FormData) {
     // 2. Try to find in TeamMember (Team Member)
     const member = await prisma.teamMember.findUnique({
       where: { email },
+      include: {
+        team: true
+      }
     });
 
     if (member) {
+      if (hackathonId && member.team.hackathonId !== hackathonId) {
+        return { success: false, error: "Credentials not registered for this hackathon." };
+      }
       const isValid = verifyPassword(password, member.passwordHash);
       if (isValid) {
         await setTeamSessionCookie(member.id);
