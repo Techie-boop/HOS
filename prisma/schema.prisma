@@ -277,3 +277,33 @@ model ProjectRoast {
   team      Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
 }
+
+model PlatformService {
+  id          String      @id
+  name        String
+  status      String      @default("Operational") // "Operational", "Degraded", "Outage"
+  description String
+  uptimeLogs  UptimeLog[]
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+}
+
+model UptimeLog {
+  id                String          @id @default(uuid())
+  serviceId         String
+  service           PlatformService @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  date              DateTime
+  status            String          @default("Operational") // "Operational", "Degraded", "Outage"
+  responseLatencyMs Int             @default(0)
+  createdAt         DateTime        @default(now())
+}
+
+model PlatformIncident {
+  id         String    @id @default(uuid())
+  title      String
+  content    String
+  status     String    @default("Resolved") // "Investigating", "Identified", "Monitoring", "Resolved"
+  resolvedAt DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+}
